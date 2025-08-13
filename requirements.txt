@@ -28,4 +28,3 @@ googlesearch-python
 PyPDF2
 langchain
 scikit-learn
-pdfplumber
