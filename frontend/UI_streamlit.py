@@ -10,119 +10,104 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import os
 
-# ---------- Backend Configuration ----------
+# ---------- Backend configuration ----------
 def get_backend_url():
-    """Détermine l'URL du backend selon l'environnement"""
-    
-    # 1. Si BACKEND_URL est défini dans les secrets Streamlit Cloud
+    """Return the backend URL based on environment variables."""
+    # 1) Prefer an explicit override
     if os.getenv("BACKEND_URL"):
         return os.getenv("BACKEND_URL")
-    
-    # 2. Si on est en développement local
+
+    # 2) Local development
     if os.getenv("STREAMLIT_ENV") == "development":
         return "http://localhost:8000"
-    
-    # 3. NOUVELLE URL de votre backend Render déployé
+
+    # 3) Production backend (Render)
     return "https://arvin-jd91.onrender.com"
 
-BACKEND = get_backend_url()
 
-# Debug info (sera visible dans les logs Streamlit)
-print(f"🔗 Backend URL configured: {BACKEND}")
+BACKEND = get_backend_url()
+print(f"🔗 Backend URL: {BACKEND}")  # Appears in Streamlit logs
 
 # ---------- Constants ----------
 CTX_OPTIONS = {
     "Summary": "summary",
-    "Sample (200-400 rows)": "sample",
-    "Full Dataset": "full",
+    "Sample (200–400 rows)": "sample",
+    "Full dataset": "full",
 }
 LOGO = Path("assets/abacus_logo.jpeg")
-
 ADMIN_EMAIL = "arvinmoasikeeran@gmail.com"
 
-# Email Configuration
+# ---------- Email configuration ----------
 EMAIL_CONFIG = {
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "email": "arvinmoasikeeran@gmail.com",
-    "password": "eiku rvnn hsgx cptc"
+    # 🔒 Move this to an environment variable (e.g., STREAMLIT SECRETS) instead of hardcoding
+    "password": os.getenv("EMAIL_APP_PASSWORD", ""),
 }
 
-# ---------- Email Functions ----------
-
-# ---------- Email Functions ----------
-def send_forgot_password_notification(user_email):
-    """Send notification to admin for forgotten password"""
+# ---------- Email functions ----------
+def send_forgot_password_notification(user_email: str):
+    """Notify the administrator of a password reset request."""
     try:
         msg = MIMEMultipart()
-        msg['From'] = EMAIL_CONFIG["email"]
-        msg['To'] = ADMIN_EMAIL
-        msg['Subject'] = f"🔐 Password Reset Request - Abacus FinBot"
-        
-        body = f"""
-Hello Admin,
+        msg["From"] = EMAIL_CONFIG["email"]
+        msg["To"] = ADMIN_EMAIL
+        msg["Subject"] = "🔐 Password reset request — Abacus FinBot"
 
-A password reset request has been made on Abacus FinBot.
+        body = f"""Hello Admin,
+
+A password reset was requested on Abacus FinBot.
 
 📧 User email: {user_email}
-📅 Date and time: {datetime.now().strftime('%d/%m/%Y at %H:%M:%S')}
-🌐 Platform: Abacus FinBot - Streamlit Interface
+📅 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+🌐 Interface: Abacus FinBot (Streamlit)
 
 Action required:
-Please contact this user to help with their password reset.
+Please contact this user to help reset their password.
 
----
-Automatic notification - Abacus FinBot System
+—
+Automated notification — Abacus FinBot
 🤖 Do not reply to this message
-        """
-        
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
-        
+"""
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+
         server = smtplib.SMTP(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
         server.starttls()
         server.login(EMAIL_CONFIG["email"], EMAIL_CONFIG["password"])
-        
-        text = msg.as_string()
-        server.sendmail(EMAIL_CONFIG["email"], ADMIN_EMAIL, text)
+        server.sendmail(EMAIL_CONFIG["email"], ADMIN_EMAIL, msg.as_string())
         server.quit()
-        
-        return {"success": True, "message": "Notification sent successfully"}
-        
-    except Exception as e:
-        return {"success": False, "message": f"Error sending: {str(e)}"}
 
-# ---------- Functions Agent03 (Islamic Analysis) - EXPERT VERSION ----------
-def analyze_islamic_investment_request(investment_query):
-    """Analyze an investment using the Expert Sharia Agent with internet research"""
+        return {"success": True, "message": "Notification sent successfully."}
+    except Exception as e:
+        return {"success": False, "message": f"Failed to send notification: {e}"}
+
+
+# ---------- Expert Islamic analysis (Agent03) ----------
+def analyze_islamic_investment_request(investment_query: str):
+    """Analyze an investment using the Expert Sharia Agent with live web research."""
     try:
-        # Use expert endpoint instead of the old one
         payload = {"investment_query": investment_query}
-        
-        with st.spinner(f"🕌 EXPERT SHARIA ANALYSIS WITH INTERNET RESEARCH..."):
-            # Use expert API that does internet research
+        with st.spinner("🕌 Running expert Sharia analysis with internet research…"):
             r = requests.post(f"{BACKEND}/islamic/expert-analyze", json=payload, timeout=240)
             r.raise_for_status()
             result = r.json()
-            
+
             if result.get("status") == "success":
-                # Expert agent returns a different structure
                 analysis = result.get("expert_analysis", "")
                 islamic_status = result.get("islamic_status", "QUESTIONABLE ⚠️")
                 research_data = result.get("research_data", {})
                 haram_screening = result.get("haram_screening", {})
                 confidence_level = result.get("confidence_level", "MEDIUM")
                 sources_used = result.get("sources_used", [])
-                
-                # Build enriched response with research data
+
                 enhanced_response = f"""## 🕌 {islamic_status}
 
 {analysis}
 
 ---
-### 📊 **RESEARCH DATA COLLECTED**
-
+### 📊 Research data collected
 """
-                
                 # Add financial data if available
                 if research_data.get("financial_data"):
                     financial = research_data["financial_data"]
@@ -134,7 +119,6 @@ def analyze_islamic_investment_request(investment_query):
 - Sector: {financial.get('sector', 'N/A')}
 - Current Price: {financial.get('current_price', 'N/A')}
 - Market Cap: {financial.get('market_cap', 'N/A')}
-
 """
                         # Add Sharia ratios if available
                         sharia_ratios = financial.get("sharia_ratios", {})
@@ -145,7 +129,6 @@ def analyze_islamic_investment_request(investment_query):
 - Debt Compliant: {'✅' if sharia_ratios.get('debt_to_market_cap', {}).get('compliant') else '❌'}
 - Cash Ratio: {sharia_ratios.get('cash_to_market_cap', {}).get('value', 'N/A')}% (Limit: 33%)
 """
-                
                 # Add web search results
                 if research_data.get("web_research", {}).get("results"):
                     enhanced_response += f"""
@@ -154,7 +137,6 @@ def analyze_islamic_investment_request(investment_query):
 """
                     for i, web_result in enumerate(research_data["web_research"]["results"][:2], 1):
                         enhanced_response += f"- [{web_result.get('title', 'Title not available')}]({web_result.get('url', '#')})\n"
-                
                 # Add news
                 if research_data.get("recent_news", {}).get("news"):
                     news_items = research_data["recent_news"]["news"]
@@ -164,7 +146,6 @@ def analyze_islamic_investment_request(investment_query):
 """
                     for news in news_items[:2]:
                         enhanced_response += f"- {news.get('title', 'Title not available')} ({news.get('source', 'Unknown source')})\n"
-                
                 # Add haram screening
                 if haram_screening.get("haram_indicators_found"):
                     enhanced_response += f"""
@@ -174,18 +155,16 @@ def analyze_islamic_investment_request(investment_query):
 """
                     for category, keywords in haram_screening["haram_indicators_found"].items():
                         enhanced_response += f"  - {category}: {', '.join(keywords[:3])}\n"
-                
                 enhanced_response += f"""
-
 ---
-### 🎯 **ANALYSIS METADATA**
-- **Confidence Level:** {confidence_level}
-- **Agent Used:** {result.get('agent_type', 'Expert Sharia with research')}
-- **Sources Consulted:** {len(sources_used)} types of sources
-- **Timestamp:** {result.get('timestamp', 'N/A')}
-- **Analysis Based On:** Real-time internet research + Islamic knowledge base
+### 🎯 ANALYSIS METADATA
+- Confidence Level: {confidence_level}
+- Agent Used: {result.get('agent_type', 'Expert Sharia with research')}
+- Sources Consulted: {len(sources_used)} types of sources
+- Timestamp: {result.get('timestamp', 'N/A')}
+- Analysis Based On: Real-time internet research + Islamic knowledge base
 
-### 🔧 **Sources Used:**
+### 🔧 Sources Used:
 {', '.join(sources_used) if sources_used else 'Multiple sources'}
 """
                 
@@ -1186,7 +1165,7 @@ if not ss.chat_started:
     
     # Logo
     if LOGO.exists():
-        col1, col2, col3 = st.columns([1, 1, 1])
+        col1, col2 = st.columns([1, 1])
         with col2:
             st.image(str(LOGO), width=280)
     else:
@@ -1481,7 +1460,7 @@ elif ss.current_page == "stocks":
         
         stock_symbol = st.text_input(
             "Stock symbol:",
-            placeholder="Ex: AAPL, TSLA, MSFT, GOOGL...",
+            placeholder="e.g., AAPL, TSLA, MSFT, GOOGL...",
             key="stock_input_main"
         )
         
@@ -1759,7 +1738,7 @@ elif ss.current_page == "islamic":
         with col_input:
             user_input = st.text_input(
                 "Ask your Islamic investment question:",
-                placeholder="Ex: Is Microsoft halal? Can I invest in Amazon? Bitcoin Islamic analysis?",
+                placeholder="e.g., Is Microsoft halal? Can I invest in Amazon? Bitcoin Islamic analysis?",
                 key="islamic_chat_input",
                 label_visibility="collapsed"
             )
@@ -1791,6 +1770,7 @@ elif ss.current_page == "islamic":
 - **Confidence:** {confidence_level}
 - **Sources:** {len(sources_used)} types used
 - **Internet Research:** ✅ Real-time data
+
 """
                 
                 ss.islamic_messages.append({
