@@ -26,7 +26,7 @@ def get_backend_url():
 
 
 BACKEND = get_backend_url()
-print(f"🔗 Backend URL: {BACKEND}")  # Appears in Streamlit logs
+print(f"🔗 Backend URL: {BACKEND}")  
 
 # ---------- Constants ----------
 CTX_OPTIONS = {
