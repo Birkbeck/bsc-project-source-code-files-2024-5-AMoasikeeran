@@ -331,7 +331,7 @@ def get_stock_price_request(symbol):
     """Get stock price"""
     try:
         payload = {"symbol": symbol}
-        r = requests.post(f"{BACKEND}/stock/price", json=payload, timeout=30)
+        r = requests.post(f"{BACKEND}/stock/price", json=payload, timeout=90)
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -341,7 +341,7 @@ def get_stock_info_request(symbol):
     """Get company information"""
     try:
         payload = {"symbol": symbol}
-        r = requests.post(f"{BACKEND}/stock/info", json=payload, timeout=30)
+        r = requests.post(f"{BACKEND}/stock/info", json=payload, timeout=90)
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -352,7 +352,7 @@ def authenticate_user(email, password):
     """Authenticate user via API"""
     try:
         payload = {"email": email.strip(), "password": password}
-        r = requests.post(f"{BACKEND}/login", json=payload, timeout=10)
+        r = requests.post(f"{BACKEND}/login", json=payload, timeout=300)
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -362,7 +362,7 @@ def authenticate_user(email, password):
 def ensure_session():
     """Guarantee that we have a valid session_id from the backend."""
     if st.session_state.get("session_id") is None:
-        r = requests.post(f"{BACKEND}/session", timeout=10)
+        r = requests.post(f"{BACKEND}/session", timeout=300)
         r.raise_for_status()
         st.session_state.session_id = r.json()["session_id"]
 
