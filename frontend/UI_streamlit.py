@@ -22,7 +22,7 @@ def get_backend_url():
         return "http://localhost:8000"
 
     # 3) Production backend (Render)
-    return "https://arvin-jd91.onrender.com"
+    return "https://bsc-project-source-code-files-2024-5.onrender.com"
 
 
 BACKEND = get_backend_url()
