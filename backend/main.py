@@ -8,7 +8,7 @@ from config import settings
 from routes import router
 from Database.database import create_tables, add_test_users
 
-# Variables de configuration par défaut (puisqu'elles ne sont pas dans config.py)
+# Default configuration variables (since they're not in config.py)
 ENVIRONMENT = "development"
 PORT = 8000
 
@@ -70,7 +70,7 @@ async def startup_event():
     # ========== AGENT 02 (Stock Analysis) ==========
     try:
         print("\n📈 Initializing Agent02 (Stock Analysis)...")
-        # Test import des outils stock
+        # Test import of stock tools
         from Agent02.tools import get_current_stock_price
         print("✅ Stock analysis tools imported")
         agents_initialized["agent02"] = True
@@ -94,7 +94,7 @@ async def startup_event():
             print("   💡 Halal alternatives research")
             print("   📈 Sharia ratio calculations")
             
-            # Test des capacités de l'expert
+            # Test expert capabilities
             try:
                 status = sharia_expert_agent.get_agent_status()
                 print(f"✅ Expert status verified: {status.get('status', 'unknown')}")
@@ -169,7 +169,7 @@ app.include_router(router)
 async def root():
     total_agents = sum(agents_initialized.values())
     
-    # Info sur l'expert Sharia
+    # Sharia expert info
     expert_info = {}
     if SHARIA_EXPERT_AVAILABLE and sharia_expert_agent:
         try:
@@ -243,7 +243,7 @@ async def root():
 async def readiness_check():
     total_agents = sum(agents_initialized.values())
     
-    # Status détaillé de l'expert
+    # Detailed expert status
     expert_ready = False
     expert_details = {}
     
@@ -284,16 +284,17 @@ async def health_check():
         "expert_available": SHARIA_EXPERT_AVAILABLE,
         "research_tools": agents_initialized["agent03"]
     }
+
 if __name__ == "__main__":
     import os
     
-    # Détection automatique de l'environnement Render
+    # Automatic Render environment detection
     is_render = os.getenv("RENDER") == "true" or os.getenv("PORT") is not None
     
-    # Configuration du port - Render utilise la variable PORT
+    # Port configuration - Render uses the PORT variable
     port = int(os.environ.get("PORT", 8000))
     
-    # Configuration de l'environnement
+    # Environment configuration
     environment = "production" if is_render else ENVIRONMENT
     
     print(f"🚀 Starting Abacus FinBot Backend...")
@@ -306,9 +307,9 @@ if __name__ == "__main__":
         print("🌟 PRODUCTION MODE - Render Deployment")
         uvicorn.run(
             "main:app",
-            host="0.0.0.0",  # IMPORTANT: 0.0.0.0 pour Render
+            host="0.0.0.0",  # IMPORTANT: 0.0.0.0 for Render
             port=port,
-            reload=False,    # Pas de reload en production
+            reload=False,    # No reload in production
             log_level="info",
             access_log=True
         )

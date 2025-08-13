@@ -34,7 +34,7 @@ from Agent02.tools import *
 # ==================== SHARIA EXPERT AGENT IMPORT ====================
 try:
     from Agent03.sharia_expert_agent import initialize_sharia_expert
-    # Initialiser l'agent avec les settings
+    # Initialize agent with settings
     sharia_expert_agent = initialize_sharia_expert(settings.OPENAI_API_KEY, settings.MODEL_NAME)
     SHARIA_EXPERT_AVAILABLE = True
     print("✅ Routes: Sharia Expert Agent imported with research tools")
@@ -537,7 +537,7 @@ async def stock_service_health():
 @router.post("/islamic/expert-analyze", response_model=ShariaAnalysisResponse)
 async def expert_sharia_analysis(request: ShariaAnalysisRequest):
     """
-    Analyse experte Sharia avec recherche en temps réel
+    Expert Sharia analysis with real-time research
     """
     try:
         if not SHARIA_EXPERT_AVAILABLE or not sharia_expert_agent:
@@ -549,13 +549,13 @@ async def expert_sharia_analysis(request: ShariaAnalysisRequest):
         
         print(f"🕌 Expert Sharia analysis with research tools: {investment_query}")
         
-        # Analyse complète avec outils de recherche
+        # Comprehensive analysis with research tools
         result = await sharia_expert_agent.analyze_investment_comprehensive(investment_query)
         
         if result.get("status") == "error":
             raise HTTPException(status_code=500, detail=result.get("message"))
         
-        # Extraire le verdict principal
+        # Extract main verdict
         sharia_analysis = result.get("sharia_analysis", {})
         verdict = sharia_analysis.get("verdict", "QUESTIONABLE ⚠️")
         analysis_text = sharia_analysis.get("analysis_text", "Analysis not available")
@@ -567,11 +567,11 @@ async def expert_sharia_analysis(request: ShariaAnalysisRequest):
             expert_analysis=analysis_text,
             research_data=result.get("research_data", {}),
             haram_screening=result.get("haram_screening", {}),
-            confidence_level=sharia_analysis.get("confidence_level", "MOYEN"),
+            confidence_level=sharia_analysis.get("confidence_level", "MEDIUM"),
             sources_used=sharia_analysis.get("sources_used", []),
             agent_type="Sharia Expert with Research Tools",
             timestamp=result.get("timestamp"),
-            message="Analyse complétée avec outils de recherche"
+            message="Analysis completed with research tools"
         )
         
     except HTTPException:
@@ -582,7 +582,7 @@ async def expert_sharia_analysis(request: ShariaAnalysisRequest):
 @router.post("/islamic/expert-alternatives", response_model=ShariaAlternativesResponse)
 async def expert_halal_alternatives(request: ShariaAlternativesRequest):
     """
-    Alternatives halal avec recherche experte
+    Halal alternatives with expert research
     """
     try:
         if not SHARIA_EXPERT_AVAILABLE or not sharia_expert_agent:
@@ -594,13 +594,13 @@ async def expert_halal_alternatives(request: ShariaAlternativesRequest):
         
         print(f"🔍 Expert search for halal alternatives: {haram_investment}")
         
-        # Recherche d'alternatives avec outils
+        # Search for alternatives with tools
         result = await sharia_expert_agent.get_halal_alternatives(haram_investment)
         
         if result.get("status") == "error":
             raise HTTPException(status_code=500, detail=result.get("message"))
         
-        # Combiner les recommandations
+        # Combine recommendations
         ai_recs = result.get("ai_recommendations", {})
         recommendations = ai_recs.get("recommendations", "No alternatives found")
         
@@ -612,7 +612,7 @@ async def expert_halal_alternatives(request: ShariaAlternativesRequest):
             research_based=True,
             agent_type="Sharia Expert with Research Tools",
             timestamp=result.get("timestamp"),
-            message="Alternatives trouvées avec recherche experte"
+            message="Alternatives found with expert research"
         )
         
     except HTTPException:
@@ -623,7 +623,7 @@ async def expert_halal_alternatives(request: ShariaAlternativesRequest):
 @router.post("/islamic/research-company", response_model=CompanyResearchResponse)
 async def research_company_islamic(request: CompanyResearchRequest):
     """
-    Recherche approfondie d'une entreprise pour analyse Sharia
+    Comprehensive company research for Sharia analysis
     """
     try:
         if not SHARIA_EXPERT_AVAILABLE or not sharia_expert_agent:
@@ -635,10 +635,10 @@ async def research_company_islamic(request: CompanyResearchRequest):
         
         print(f"🔍 Researching company for Sharia analysis: {company_name}")
         
-        # Recherche complète
+        # Comprehensive research
         research_result = await sharia_expert_agent.search_company_info(company_name)
         
-        # Screening haram
+        # Haram screening
         haram_check = await sharia_expert_agent.check_haram_keywords(research_result)
         
         return CompanyResearchResponse(
@@ -648,7 +648,7 @@ async def research_company_islamic(request: CompanyResearchRequest):
             haram_screening=haram_check,
             agent_type="Sharia Expert Research Tools",
             timestamp=datetime.now().isoformat(),
-            message="Recherche complétée avec outils experts"
+            message="Research completed with expert tools"
         )
         
     except HTTPException:
@@ -659,7 +659,7 @@ async def research_company_islamic(request: CompanyResearchRequest):
 @router.get("/islamic/expert-status")
 async def expert_agent_status():
     """
-    Statut de l'agent expert Sharia
+    Sharia expert agent status
     """
     try:
         if not SHARIA_EXPERT_AVAILABLE or not sharia_expert_agent:
@@ -722,28 +722,28 @@ async def islamic_health():
             "error": str(e)
         }
 
-# ==================== SIMPLIFIED ISLAMIC ROUTES (pour compatibilité) ====================
+# ==================== SIMPLIFIED ISLAMIC ROUTES (for compatibility) ====================
 
 @router.post("/islamic/analyze", response_model=ShariaAnalysisResponse)
 async def islamic_analyze_investment(request: ShariaAnalysisRequest):
     """
-    Analyse islamique simplifiée (redirige vers expert)
+    Simplified Islamic analysis (redirects to expert)
     """
-    # Redirection vers l'analyse experte
+    # Redirect to expert analysis
     return await expert_sharia_analysis(request)
 
 @router.post("/islamic/alternatives", response_model=ShariaAlternativesResponse)
 async def islamic_get_alternatives(request: ShariaAlternativesRequest):
     """
-    Alternatives islamiques simplifiées (redirige vers expert)
+    Simplified Islamic alternatives (redirects to expert)
     """
-    # Redirection vers l'expert
+    # Redirect to expert
     return await expert_halal_alternatives(request)
 
 @router.get("/islamic/status")
 async def islamic_status():
     """
-    Statut islamique (redirige vers expert)
+    Islamic status (redirects to expert)
     """
     return await expert_agent_status()
 
