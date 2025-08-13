@@ -42,7 +42,7 @@ EMAIL_CONFIG = {
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "email": "arvinmoasikeeran@gmail.com",
-    # 🔒 Move this to an environment variable (e.g., STREAMLIT SECRETS) instead of hardcoding
+    # 🔒 
     "password": os.getenv("EMAIL_APP_PASSWORD", ""),
 }
 
