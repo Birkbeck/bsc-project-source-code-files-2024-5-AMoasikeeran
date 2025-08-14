@@ -4,7 +4,7 @@ import uuid
 from Agent01.functions import *
 from fastapi import APIRouter, HTTPException, UploadFile, Form, File, Depends, BackgroundTasks
 from enum import Enum
-from typing import Dict, Any, Optional      
+from typing import Dict, Any, Optional, List    
 from pydantic import BaseModel
 import os
 import random
@@ -34,7 +34,6 @@ from Agent02.tools import *
 # ==================== SHARIA EXPERT AGENT IMPORT ====================
 try:
     from Agent03.sharia_expert_agent import initialize_sharia_expert
-    # Initialize agent with settings
     sharia_expert_agent = initialize_sharia_expert(settings.OPENAI_API_KEY, settings.MODEL_NAME)
     SHARIA_EXPERT_AVAILABLE = True
     print("✅ Routes: Sharia Expert Agent imported with research tools")
@@ -549,13 +548,11 @@ async def expert_sharia_analysis(request: ShariaAnalysisRequest):
         
         print(f"🕌 Expert Sharia analysis with research tools: {investment_query}")
         
-        # Comprehensive analysis with research tools
         result = await sharia_expert_agent.analyze_investment_comprehensive(investment_query)
         
         if result.get("status") == "error":
             raise HTTPException(status_code=500, detail=result.get("message"))
         
-        # Extract main verdict
         sharia_analysis = result.get("sharia_analysis", {})
         verdict = sharia_analysis.get("verdict", "QUESTIONABLE ⚠️")
         analysis_text = sharia_analysis.get("analysis_text", "Analysis not available")
@@ -594,13 +591,11 @@ async def expert_halal_alternatives(request: ShariaAlternativesRequest):
         
         print(f"🔍 Expert search for halal alternatives: {haram_investment}")
         
-        # Search for alternatives with tools
         result = await sharia_expert_agent.get_halal_alternatives(haram_investment)
         
         if result.get("status") == "error":
             raise HTTPException(status_code=500, detail=result.get("message"))
         
-        # Combine recommendations
         ai_recs = result.get("ai_recommendations", {})
         recommendations = ai_recs.get("recommendations", "No alternatives found")
         
@@ -623,7 +618,7 @@ async def expert_halal_alternatives(request: ShariaAlternativesRequest):
 @router.post("/islamic/research-company", response_model=CompanyResearchResponse)
 async def research_company_islamic(request: CompanyResearchRequest):
     """
-    Comprehensive company research for Sharia analysis
+    In-depth company research for Sharia analysis
     """
     try:
         if not SHARIA_EXPERT_AVAILABLE or not sharia_expert_agent:
@@ -635,10 +630,8 @@ async def research_company_islamic(request: CompanyResearchRequest):
         
         print(f"🔍 Researching company for Sharia analysis: {company_name}")
         
-        # Comprehensive research
         research_result = await sharia_expert_agent.search_company_info(company_name)
         
-        # Haram screening
         haram_check = await sharia_expert_agent.check_haram_keywords(research_result)
         
         return CompanyResearchResponse(
@@ -659,7 +652,7 @@ async def research_company_islamic(request: CompanyResearchRequest):
 @router.get("/islamic/expert-status")
 async def expert_agent_status():
     """
-    Sharia expert agent status
+    Status of the Sharia expert agent
     """
     try:
         if not SHARIA_EXPERT_AVAILABLE or not sharia_expert_agent:
@@ -722,14 +715,12 @@ async def islamic_health():
             "error": str(e)
         }
 
-# ==================== SIMPLIFIED ISLAMIC ROUTES (for compatibility) ====================
 
 @router.post("/islamic/analyze", response_model=ShariaAnalysisResponse)
 async def islamic_analyze_investment(request: ShariaAnalysisRequest):
     """
     Simplified Islamic analysis (redirects to expert)
     """
-    # Redirect to expert analysis
     return await expert_sharia_analysis(request)
 
 @router.post("/islamic/alternatives", response_model=ShariaAlternativesResponse)
@@ -737,7 +728,6 @@ async def islamic_get_alternatives(request: ShariaAlternativesRequest):
     """
     Simplified Islamic alternatives (redirects to expert)
     """
-    # Redirect to expert
     return await expert_halal_alternatives(request)
 
 @router.get("/islamic/status")
@@ -802,3 +792,424 @@ async def health_all_services():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Global health error: {str(e)}")
+    
+class ChartRequest(BaseModel):
+    chart_type: str  # bar, line, pie, scatter, histogram, box, violin, heatmap, area, donut
+    columns: List[str]
+    title: Optional[str] = ""
+    interactive: bool = True
+    data: Optional[List[Dict[str, Any]]] = None
+
+class ChartSuggestionRequest(BaseModel):
+    columns: List[str]
+
+class DashboardRequest(BaseModel):
+    file_id: Optional[str] = None
+
+class VisualizationRequest(BaseModel):
+    user_prompt: str
+    file_id: Optional[str] = None
+    chart_preferences: Optional[Dict[str, Any]] = None
+
+
+@router.post("/finbot/create-chart")
+async def create_chart_endpoint(request: ChartRequest):
+    try:
+        if request.data:
+            df = pd.DataFrame(request.data)
+        else:
+            import numpy as np
+            df = pd.DataFrame({
+                'category': ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Healthcare'],
+                'amount': [1200, 800, 600, 400, 300],
+                'date': pd.date_range('2023-01-01', periods=5),
+                'merchant': ['Store A', 'Gas Station', 'Cinema', 'Electric Co', 'Hospital']
+            })
+        if request.interactive:
+            chart_result = create_interactive_chart(
+                df, 
+                request.chart_type, 
+                request.columns, 
+                request.title
+            )
+            try:
+                result_data = json.loads(chart_result)
+                if isinstance(result_data, dict) and result_data.get("action") == "error":
+                    raise HTTPException(status_code=400, detail=result_data.get("message"))
+                
+                return {
+                    "success": True,
+                    "chart_type": request.chart_type,
+                    "interactive": True,
+                    "chart_data": result_data
+                }
+            except json.JSONDecodeError:
+                return {
+                    "success": True,
+                    "chart_type": request.chart_type,
+                    "interactive": True,
+                    "chart_data": json.loads(chart_result)
+                }
+        else:
+            chart_base64 = make_chart(
+                df, 
+                request.chart_type, 
+                request.columns, 
+                request.title,
+                interactive=False
+            )
+            try:
+                error_data = json.loads(chart_base64)
+                if error_data.get("action") == "error":
+                    raise HTTPException(status_code=400, detail=error_data.get("message"))
+            except json.JSONDecodeError:
+                pass  
+            
+            return {
+                "success": True,
+                "chart_type": request.chart_type,
+                "interactive": False,
+                "chart_image": chart_base64
+            }
+            
+    except Exception as e:
+        logger.error(f"Error creating chart: {e}")
+        raise HTTPException(status_code=500, detail=f"Chart creation failed: {str(e)}")
+
+@router.post("/finbot/suggest-chart")
+async def suggest_chart_endpoint(request: ChartSuggestionRequest):
+    """
+    Suggests the best chart type based on selected columns.
+    """
+    try:
+        df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=100),
+            'amount': range(100),
+            'category': ['A', 'B', 'C'] * 33 + ['A'],
+            'balance': [1000 + i*10 for i in range(100)]
+        })
+        
+        suggested_type = suggest_chart_type(df, request.columns)
+        
+        return {
+            "success": True,
+            "suggested_chart_type": suggested_type,
+            "columns": request.columns,
+            "reasoning": f"Based on the data characteristics, {suggested_type} chart is most suitable"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error suggesting chart: {e}")
+        raise HTTPException(status_code=500, detail=f"Chart suggestion failed: {str(e)}")
+
+@router.post("/finbot/dashboard-data")
+async def get_dashboard_data(request: DashboardRequest):
+    """
+    Generates complete data for a dashboard with chart suggestions.
+    """
+    try:
+        df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=100),
+            'amount': range(100),
+            'category': ['Groceries', 'Transport', 'Entertainment'] * 33 + ['Groceries'],
+            'merchant': ['Store A', 'Store B', 'Store C'] * 33 + ['Store A'],
+            'balance': [1000 + i*10 for i in range(100)]
+        })
+        
+        dashboard_data = create_dashboard_data(df)
+        
+        return {
+            "success": True,
+            "dashboard": dashboard_data,
+            "data_preview": df.head(10).to_dict('records')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating dashboard data: {e}")
+        raise HTTPException(status_code=500, detail=f"Dashboard creation failed: {str(e)}")
+
+@router.post("/finbot/smart-visualization")
+async def smart_visualization(request: VisualizationRequest):
+    """
+    Uses AI to interpret user request and create appropriate visualization.
+    """
+    try:
+        df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=100),
+            'amount': [1000 + i*10 + (i%10)*50 for i in range(100)],
+            'category': ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Healthcare'] * 20,
+            'merchant': ['Store A', 'Store B', 'Store C', 'Store D', 'Store E'] * 20,
+            'balance': [5000 + i*25 for i in range(100)]
+        })
+        df_summary = df.describe().to_string()
+        columns_info = f"Available columns: {list(df.columns)}"
+        ai_prompt = f"""
+        User request: {request.user_prompt}
+        
+        Data context:
+        {columns_info}
+        
+        Data summary:
+        {df_summary}
+        
+        Please analyze the user's request and return ONLY a JSON response with the following structure:
+        {{
+            "action": "plot",
+            "kind": "bar|line|pie|scatter|histogram|box|violin|heatmap|area|donut",
+            "columns": ["column1", "column2"],
+            "title": "Chart title",
+            "interactive": true,
+            "data": []
+        }}
+        
+        Choose the most appropriate chart type and columns based on the user's request.
+        If the request is not about creating a chart, respond with explanatory text instead.
+        """
+        
+        ai_response = call_openai([{"role": "user", "content": ai_prompt}])
+        
+        try:
+            chart_config = json.loads(ai_response)
+            
+            if chart_config.get("action") == "plot":
+                chart_result = create_interactive_chart(
+                    df,
+                    chart_config.get("kind", "bar"),
+                    chart_config.get("columns", []),
+                    chart_config.get("title", "")
+                )
+                try:
+                    result_data = json.loads(chart_result)
+                    if isinstance(result_data, dict) and result_data.get("action") == "error":
+                        raise HTTPException(status_code=400, detail=result_data.get("message"))
+                    
+                    return {
+                        "success": True,
+                        "user_request": request.user_prompt,
+                        "ai_interpretation": chart_config,
+                        "chart_data": result_data
+                    }
+                except json.JSONDecodeError:
+                    return {
+                        "success": True,
+                        "user_request": request.user_prompt,
+                        "ai_interpretation": chart_config,
+                        "chart_data": json.loads(chart_result)
+                    }
+            else:
+                return {
+                    "success": True,
+                    "user_request": request.user_prompt,
+                    "ai_response": ai_response,
+                    "chart_data": None
+                }
+                
+        except json.JSONDecodeError:
+            return {
+                "success": True,
+                "user_request": request.user_prompt,
+                "ai_response": ai_response,
+                "chart_data": None
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in smart visualization: {e}")
+        raise HTTPException(status_code=500, detail=f"Smart visualization failed: {str(e)}")
+
+@router.post("/finbot/upload-and-visualize")
+async def upload_and_visualize(
+    file: UploadFile = File(...),
+    chart_type: str = Form("auto"),
+    columns: str = Form(""),
+    interactive: bool = Form(True)
+):
+    """
+    Upload a file and immediately create a visualization.
+    """
+    try:
+        file_content = await file.read()
+        df = read_excel_any(file_content, file.filename)
+        selected_columns = [col.strip() for col in columns.split(",") if col.strip()] if columns else []
+        
+        if chart_type == "auto":
+            if not selected_columns:
+                cats = [col for col in df.columns if not df[col].dtype in ['float64', 'int64']]
+                nums = [col for col in df.columns if df[col].dtype in ['float64', 'int64']]
+                selected_columns = (cats[:1] + nums[:1]) if cats and nums else list(df.columns[:2])
+            
+            chart_type = suggest_chart_type(df, selected_columns)
+        if len(df) > 1000:
+            df = sample_df(df)
+        if interactive:
+            chart_result = create_interactive_chart(df, chart_type, selected_columns, f"Analysis of {file.filename}")
+            
+            try:
+                result_data = json.loads(chart_result)
+                if isinstance(result_data, dict) and result_data.get("action") == "error":
+                    raise HTTPException(status_code=400, detail=result_data.get("message"))
+                
+                return {
+                    "success": True,
+                    "filename": file.filename,
+                    "chart_type": chart_type,
+                    "columns": selected_columns,
+                    "interactive": True,
+                    "chart_data": result_data,
+                    "data_summary": {
+                        "rows": len(df),
+                        "columns": len(df.columns),
+                        "column_names": list(df.columns)
+                    }
+                }
+            except json.JSONDecodeError:
+                return {
+                    "success": True,
+                    "filename": file.filename,
+                    "chart_type": chart_type,
+                    "columns": selected_columns,
+                    "interactive": True,
+                    "chart_data": json.loads(chart_result),
+                    "data_summary": {
+                        "rows": len(df),
+                        "columns": len(df.columns),
+                        "column_names": list(df.columns)
+                    }
+                }
+        else:
+            chart_base64 = make_chart(df, chart_type, selected_columns, f"Analysis of {file.filename}", interactive=False)
+            
+            try:
+                error_data = json.loads(chart_base64)
+                if error_data.get("action") == "error":
+                    raise HTTPException(status_code=400, detail=error_data.get("message"))
+            except json.JSONDecodeError:
+                pass  
+            
+            return {
+                "success": True,
+                "filename": file.filename,
+                "chart_type": chart_type,
+                "columns": selected_columns,
+                "interactive": False,
+                "chart_image": chart_base64,
+                "data_summary": {
+                    "rows": len(df),
+                    "columns": len(df.columns),
+                    "column_names": list(df.columns)
+                }
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in upload and visualize: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload and visualization failed: {str(e)}")
+
+@router.get("/finbot/chart-types")
+async def get_available_chart_types():
+    """
+    Returns the list of all available chart types with their descriptions.
+    """
+    chart_types = {
+        "bar": {
+            "name": "Bar Chart",
+            "description": "Perfect for comparing categories or showing distribution",
+            "best_for": ["categorical data", "comparisons", "rankings"],
+            "data_requirements": "1 categorical + 1 numeric column"
+        },
+        "line": {
+            "name": "Line Chart", 
+            "description": "Ideal for showing trends over time or continuous data",
+            "best_for": ["time series", "trends", "continuous data"],
+            "data_requirements": "1 date/numeric + 1 numeric column"
+        },
+        "pie": {
+            "name": "Pie Chart",
+            "description": "Shows proportions and percentages of a whole",
+            "best_for": ["proportions", "percentages", "parts of whole"],
+            "data_requirements": "1 categorical + 1 numeric column"
+        },
+        "donut": {
+            "name": "Donut Chart",
+            "description": "Like pie chart but with a hole in the center",
+            "best_for": ["proportions", "percentages", "modern styling"],
+            "data_requirements": "1 categorical + 1 numeric column"
+        },
+        "scatter": {
+            "name": "Scatter Plot",
+            "description": "Shows correlation between two numeric variables",
+            "best_for": ["correlations", "relationships", "outliers"],
+            "data_requirements": "2 numeric columns"
+        },
+        "histogram": {
+            "name": "Histogram",
+            "description": "Shows distribution of a single numeric variable",
+            "best_for": ["distributions", "frequency analysis"],
+            "data_requirements": "1 numeric column"
+        },
+        "box": {
+            "name": "Box Plot",
+            "description": "Shows statistical summary and outliers",
+            "best_for": ["statistical analysis", "outlier detection", "comparing distributions"],
+            "data_requirements": "1 numeric column, optional categorical"
+        },
+        "violin": {
+            "name": "Violin Plot",
+            "description": "Shows distribution shape and density",
+            "best_for": ["distribution analysis", "density visualization"],
+            "data_requirements": "1 numeric column, optional categorical"
+        },
+        "heatmap": {
+            "name": "Heatmap",
+            "description": "Shows correlation matrix or 2D data intensity",
+            "best_for": ["correlations", "patterns in 2D data"],
+            "data_requirements": "Multiple numeric columns"
+        },
+        "area": {
+            "name": "Area Chart",
+            "description": "Like line chart but with filled area underneath",
+            "best_for": ["cumulative data", "volume over time"],
+            "data_requirements": "1 date/numeric + 1 numeric column"
+        }
+    }
+    
+    return {
+        "success": True,
+        "chart_types": chart_types,
+        "total_types": len(chart_types)
+    }
+
+@router.get("/finbot/test-visualization")
+async def test_visualization():
+    """
+    Test route to verify that visualizations work.
+    """
+    try:
+        import numpy as np
+        df = pd.DataFrame({
+            'category': ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Healthcare'],
+            'amount': [1200, 800, 600, 400, 300],
+            'date': pd.date_range('2023-01-01', periods=5),
+            'percentage': [40, 27, 20, 13, 10]
+        })
+        test_results = {}
+        bar_chart = create_interactive_chart(df, "bar", ["category", "amount"], "Test Bar Chart")
+        test_results["bar_chart"] = {"status": "success" if not "error" in bar_chart else "error"}
+        
+        pie_chart = create_interactive_chart(df, "pie", ["category", "amount"], "Test Pie Chart")
+        test_results["pie_chart"] = {"status": "success" if not "error" in pie_chart else "error"}
+        
+        line_chart = create_interactive_chart(df, "line", ["date", "amount"], "Test Line Chart")
+        test_results["line_chart"] = {"status": "success" if not "error" in line_chart else "error"}
+        
+        return {
+            "success": True,
+            "message": "Visualization test completed",
+            "test_results": test_results,
+            "data_used": df.to_dict('records')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in visualization test: {e}")
+        return {
+            "success": False,
+            "message": f"Visualization test failed: {str(e)}"
+        }

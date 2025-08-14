@@ -8,106 +8,191 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-import os
-
-# ---------- Backend configuration ----------
-def get_backend_url():
-    """Return the backend URL based on environment variables."""
-    # 1) Prefer an explicit override
-    if os.getenv("BACKEND_URL"):
-        return os.getenv("BACKEND_URL")
-
-    # 2) Local development
-    if os.getenv("STREAMLIT_ENV") == "development":
-        return "http://localhost:8000"
-
-    # 3) Production backend (Render)
-    return "https://bsc-project-source-code-files-2024-5.onrender.com"
-
-
-BACKEND = get_backend_url()
-print(f"🔗 Backend URL: {BACKEND}")  
+import plotly.graph_objects as go
+from plotly.utils import PlotlyJSONEncoder
+import plotly.express as px
+import base64
+from PIL import Image
+import io
+import pandas as pd
 
 # ---------- Constants ----------
+BACKEND = "http://localhost:8000"
 CTX_OPTIONS = {
     "Summary": "summary",
-    "Sample (200–400 rows)": "sample",
-    "Full dataset": "full",
+    "Sample (200-400 rows)": "sample",
+    "Full Dataset": "full",
 }
 LOGO = Path("assets/abacus_logo.jpeg")
+
 ADMIN_EMAIL = "arvinmoasikeeran@gmail.com"
 
-# ---------- Email configuration ----------
+# Email Configuration
 EMAIL_CONFIG = {
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "email": "arvinmoasikeeran@gmail.com",
-    # 🔒 
-    "password": os.getenv("EMAIL_APP_PASSWORD", ""),
+    "password": "eiku rvnn hsgx cptc"
 }
 
-# ---------- Email functions ----------
-def send_forgot_password_notification(user_email: str):
-    """Notify the administrator of a password reset request."""
+
+def create_chart_request(chart_type, columns, title="", interactive=True, data=None):
+    """Create a chart via the backend API"""
+    try:
+        payload = {
+            "chart_type": chart_type,
+            "columns": columns,
+            "title": title,
+            "interactive": interactive,
+            "data": data
+        }
+        
+        response = requests.post(f"{BACKEND}/finbot/create-chart", json=payload, timeout=120)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"success": False, "message": f"Chart creation error: {str(e)}"}
+
+def smart_visualization_request(user_prompt):
+    try:
+        payload = {"user_prompt": user_prompt}
+        
+        response = requests.post(f"{BACKEND}/finbot/smart-visualization", json=payload, timeout=180)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"success": False, "message": f"Smart visualization error: {str(e)}"}
+
+def upload_and_visualize_request(uploaded_file, chart_type="auto", columns="", interactive=True):
+    try:
+        files = {"file": uploaded_file}
+        data = {
+            "chart_type": chart_type,
+            "columns": columns,
+            "interactive": str(interactive).lower()
+        }
+        
+        response = requests.post(f"{BACKEND}/finbot/upload-and-visualize", data=data, files=files, timeout=120)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"success": False, "message": f"Upload and visualize error: {str(e)}"}
+
+def get_chart_types():
+    try:
+        response = requests.get(f"{BACKEND}/finbot/chart-types", timeout=30)
+        response.raise_for_status()
+        result = response.json()
+        if result.get("success"):
+            return result["chart_types"]
+        return {}
+    except Exception:
+        return {}
+
+def display_plotly_chart(chart_data, chart_key=None):
+    try:
+        if isinstance(chart_data, str):
+            chart_data = json.loads(chart_data)
+        
+        fig = go.Figure(chart_data)
+        if chart_key is None:
+            chart_key = f"plotly_chart_{int(time.time() * 1000000)}"  
+        
+        st.plotly_chart(fig, use_container_width=True, key=chart_key, config={
+            'displayModeBar': True,
+            'displaylogo': False,
+            'modeBarButtonsToRemove': ['pan2d', 'lasso2d', 'select2d']
+        })
+        return True
+    except Exception as e:
+        st.error(f"Chart display error: {e}")
+        return False
+
+def detect_chart_request(message):
+    chart_keywords = [
+        'chart', 'graph', 'plot', 'visuali', 'curve', 'graphic', 
+        'bar', 'line', 'pie', 'scatter', 'histogram', 'box', 'violin',
+        'heatmap', 'area', 'donut', 'pie chart', 'histogram',
+        'show', 'display', 'draw', 'create', 'make', 'generate',
+        'display', 'show', 'create', 'generate', 'draw'
+    ]
+    
+    message_lower = message.lower()
+    return any(keyword in message_lower for keyword in chart_keywords)
+
+# ---------- Email Functions ----------
+def send_forgot_password_notification(user_email):
+    """Send notification to admin for forgotten password"""
     try:
         msg = MIMEMultipart()
-        msg["From"] = EMAIL_CONFIG["email"]
-        msg["To"] = ADMIN_EMAIL
-        msg["Subject"] = "🔐 Password reset request — Abacus FinBot"
+        msg['From'] = EMAIL_CONFIG["email"]
+        msg['To'] = ADMIN_EMAIL
+        msg['Subject'] = f"🔐 Password Reset Request - Abacus FinBot"
+        
+        body = f"""
+Hello Admin,
 
-        body = f"""Hello Admin,
-
-A password reset was requested on Abacus FinBot.
+A password reset request has been made on Abacus FinBot.
 
 📧 User email: {user_email}
-📅 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-🌐 Interface: Abacus FinBot (Streamlit)
+📅 Date and time: {datetime.now().strftime('%d/%m/%Y at %H:%M:%S')}
+🌐 Platform: Abacus FinBot - Streamlit Interface
 
 Action required:
-Please contact this user to help reset their password.
+Please contact this user to help with their password reset.
 
-—
-Automated notification — Abacus FinBot
+---
+Automatic notification - Abacus FinBot System
 🤖 Do not reply to this message
-"""
-        msg.attach(MIMEText(body, "plain", "utf-8"))
-
+        """
+        
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        
         server = smtplib.SMTP(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
         server.starttls()
         server.login(EMAIL_CONFIG["email"], EMAIL_CONFIG["password"])
-        server.sendmail(EMAIL_CONFIG["email"], ADMIN_EMAIL, msg.as_string())
+        
+        text = msg.as_string()
+        server.sendmail(EMAIL_CONFIG["email"], ADMIN_EMAIL, text)
         server.quit()
-
-        return {"success": True, "message": "Notification sent successfully."}
+        
+        return {"success": True, "message": "Notification sent successfully"}
+        
     except Exception as e:
-        return {"success": False, "message": f"Failed to send notification: {e}"}
+        return {"success": False, "message": f"Error sending: {str(e)}"}
 
-
-# ---------- Expert Islamic analysis (Agent03) ----------
-def analyze_islamic_investment_request(investment_query: str):
-    """Analyze an investment using the Expert Sharia Agent with live web research."""
+# ---------- Functions Agent03 (Islamic Analysis) - EXPERT VERSION ----------
+def analyze_islamic_investment_request(investment_query):
+    """Analyze an investment using the Expert Sharia Agent with internet research"""
     try:
+        # Use expert endpoint instead of the old one
         payload = {"investment_query": investment_query}
-        with st.spinner("🕌 Running expert Sharia analysis with internet research…"):
+        
+        with st.spinner(f"🕌 EXPERT SHARIA ANALYSIS WITH INTERNET RESEARCH..."):
+            # Use expert API that does internet research
             r = requests.post(f"{BACKEND}/islamic/expert-analyze", json=payload, timeout=240)
             r.raise_for_status()
             result = r.json()
-
+            
             if result.get("status") == "success":
+                # Expert agent returns a different structure
                 analysis = result.get("expert_analysis", "")
                 islamic_status = result.get("islamic_status", "QUESTIONABLE ⚠️")
                 research_data = result.get("research_data", {})
                 haram_screening = result.get("haram_screening", {})
                 confidence_level = result.get("confidence_level", "MEDIUM")
                 sources_used = result.get("sources_used", [])
-
+                
+                # Build enriched response with research data
                 enhanced_response = f"""## 🕌 {islamic_status}
 
 {analysis}
 
 ---
-### 📊 Research data collected
+### 📊 **RESEARCH DATA COLLECTED**
+
 """
+                
                 # Add financial data if available
                 if research_data.get("financial_data"):
                     financial = research_data["financial_data"]
@@ -119,6 +204,7 @@ def analyze_islamic_investment_request(investment_query: str):
 - Sector: {financial.get('sector', 'N/A')}
 - Current Price: {financial.get('current_price', 'N/A')}
 - Market Cap: {financial.get('market_cap', 'N/A')}
+
 """
                         # Add Sharia ratios if available
                         sharia_ratios = financial.get("sharia_ratios", {})
@@ -129,6 +215,7 @@ def analyze_islamic_investment_request(investment_query: str):
 - Debt Compliant: {'✅' if sharia_ratios.get('debt_to_market_cap', {}).get('compliant') else '❌'}
 - Cash Ratio: {sharia_ratios.get('cash_to_market_cap', {}).get('value', 'N/A')}% (Limit: 33%)
 """
+                
                 # Add web search results
                 if research_data.get("web_research", {}).get("results"):
                     enhanced_response += f"""
@@ -137,6 +224,7 @@ def analyze_islamic_investment_request(investment_query: str):
 """
                     for i, web_result in enumerate(research_data["web_research"]["results"][:2], 1):
                         enhanced_response += f"- [{web_result.get('title', 'Title not available')}]({web_result.get('url', '#')})\n"
+                
                 # Add news
                 if research_data.get("recent_news", {}).get("news"):
                     news_items = research_data["recent_news"]["news"]
@@ -146,6 +234,7 @@ def analyze_islamic_investment_request(investment_query: str):
 """
                     for news in news_items[:2]:
                         enhanced_response += f"- {news.get('title', 'Title not available')} ({news.get('source', 'Unknown source')})\n"
+                
                 # Add haram screening
                 if haram_screening.get("haram_indicators_found"):
                     enhanced_response += f"""
@@ -155,16 +244,18 @@ def analyze_islamic_investment_request(investment_query: str):
 """
                     for category, keywords in haram_screening["haram_indicators_found"].items():
                         enhanced_response += f"  - {category}: {', '.join(keywords[:3])}\n"
+                
                 enhanced_response += f"""
----
-### 🎯 ANALYSIS METADATA
-- Confidence Level: {confidence_level}
-- Agent Used: {result.get('agent_type', 'Expert Sharia with research')}
-- Sources Consulted: {len(sources_used)} types of sources
-- Timestamp: {result.get('timestamp', 'N/A')}
-- Analysis Based On: Real-time internet research + Islamic knowledge base
 
-### 🔧 Sources Used:
+---
+### 🎯 **ANALYSIS METADATA**
+- **Confidence Level:** {confidence_level}
+- **Agent Used:** {result.get('agent_type', 'Expert Sharia with research')}
+- **Sources Consulted:** {len(sources_used)} types of sources
+- **Timestamp:** {result.get('timestamp', 'N/A')}
+- **Analysis Based On:** Real-time internet research + Islamic knowledge base
+
+### 🔧 **Sources Used:**
 {', '.join(sources_used) if sources_used else 'Multiple sources'}
 """
                 
@@ -331,7 +422,7 @@ def get_stock_price_request(symbol):
     """Get stock price"""
     try:
         payload = {"symbol": symbol}
-        r = requests.post(f"{BACKEND}/stock/price", json=payload, timeout=90)
+        r = requests.post(f"{BACKEND}/stock/price", json=payload, timeout=30)
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -341,7 +432,7 @@ def get_stock_info_request(symbol):
     """Get company information"""
     try:
         payload = {"symbol": symbol}
-        r = requests.post(f"{BACKEND}/stock/info", json=payload, timeout=90)
+        r = requests.post(f"{BACKEND}/stock/info", json=payload, timeout=30)
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -352,7 +443,7 @@ def authenticate_user(email, password):
     """Authenticate user via API"""
     try:
         payload = {"email": email.strip(), "password": password}
-        r = requests.post(f"{BACKEND}/login", json=payload, timeout=300)
+        r = requests.post(f"{BACKEND}/login", json=payload, timeout=10)
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -362,7 +453,7 @@ def authenticate_user(email, password):
 def ensure_session():
     """Guarantee that we have a valid session_id from the backend."""
     if st.session_state.get("session_id") is None:
-        r = requests.post(f"{BACKEND}/session", timeout=300)
+        r = requests.post(f"{BACKEND}/session", timeout=10)
         r.raise_for_status()
         st.session_state.session_id = r.json()["session_id"]
 
@@ -377,15 +468,106 @@ def go_to_islamic():
     st.session_state.current_page = "islamic"
 
 def logout():
-    """Logout user"""
+    """Logout user and clear ALL chat sessions"""
     st.session_state.chat_started = False
     st.session_state.user_info = None
-    st.session_state.session_id = None
-    st.session_state.messages = []
     st.session_state.current_page = "menu"
+    
+    # Clear FinBot session
+    st.session_state.finbot_session_id = None
+    st.session_state.finbot_messages = []
+    st.session_state.finbot_uploader = False
+    st.session_state.finbot_context = "sample"
+    
+    # Clear Stock session
     st.session_state.stock_results = None
     st.session_state.last_analyzed_symbol = ""
+    st.session_state.stock_chat_messages = []
+    
+    # Clear Islamic session
     st.session_state.islamic_messages = []
+    st.session_state.islamic_input_field = ""
+
+def ensure_finbot_session():
+    """Guarantee that we have a valid session_id for FinBot."""
+    if st.session_state.get("finbot_session_id") is None:
+        r = requests.post(f"{BACKEND}/session", timeout=10)
+        r.raise_for_status()
+        st.session_state.finbot_session_id = r.json()["session_id"]
+
+def open_finbot_uploader():
+    st.session_state.finbot_uploader = True
+
+def cancel_finbot_upload():
+    st.session_state.finbot_uploader = False
+
+def confirm_finbot_upload():
+    file = st.session_state.finbot_file_uploader
+    ensure_finbot_session()
+
+    try:
+        files = {"file": (file.name, file.getvalue())}
+        data = {"session_id": st.session_state.finbot_session_id}
+        r = requests.post(f"{BACKEND}/upload", files=files, data=data, timeout=60)
+        r.raise_for_status()
+        res = r.json()
+
+        st.session_state.finbot_session_id = res["session_id"]
+        st.session_state.finbot_context = "sample"
+        st.success("✅ File uploaded and linked to FinBot chat!")
+    except Exception as e:
+        st.error(f"❌ Upload failed: {e}")
+    st.session_state.finbot_uploader = False
+
+def submit_finbot_message(msg: str):
+    """Handle user sending a message in FinBot chat."""
+    msg = (msg or "").strip()
+    if not msg:
+        return
+
+    ensure_finbot_session()
+    ss.finbot_messages.append({"role": "user", "text": msg})
+    if detect_chart_request(msg):
+        with st.spinner("🎨 Creating your visualization..."):
+            viz_result = smart_visualization_request(msg)
+            
+            if viz_result.get("success") and viz_result.get("chart_data"):
+                if viz_result.get("ai_interpretation"):
+                    interpretation = viz_result["ai_interpretation"]
+                    ai_msg = f"📊 I'll create a {interpretation.get('kind', 'chart')} for you using {', '.join(interpretation.get('columns', []))}"
+                    ss.finbot_messages.append({"role": "bot", "text": ai_msg})
+                ss.finbot_messages.append({
+                    "role": "bot", 
+                    "text": "📈 Here's your visualization:",
+                    "chart_data": viz_result["chart_data"],
+                    "chart_type": "interactive"
+                })
+                return
+            elif viz_result.get("ai_response"):
+                ss.finbot_messages.append({"role": "bot", "text": viz_result["ai_response"]})
+                return
+    try:
+        payload = {
+            "session_id": ss.finbot_session_id,
+            "message": msg,
+            "context_mode": ss.finbot_context,
+        }
+        r = requests.post(f"{BACKEND}/chat", json=payload, timeout=120)
+        r.raise_for_status()
+        data = r.json()
+        ss.finbot_session_id = data.get("session_id", ss.finbot_session_id)
+        bot_msg = data.get("answer", "(no response)")
+        chart64 = data.get("chart_base64")
+        
+        message_data = {"role": "bot", "text": bot_msg}
+        if chart64:
+            message_data["chart"] = chart64
+            message_data["chart_type"] = "static"
+        
+        ss.finbot_messages.append(message_data)
+    except Exception as e:
+        ss.finbot_messages.append({"role": "bot", "text": f"⚠️ Error: {e}"})
+
 
 # ---------- Login Functions ----------
 def start_chat():
@@ -482,16 +664,33 @@ def confirm_upload():
     except Exception as e:
         st.error(f"❌ Upload failed: {e}")
     st.session_state.uploader = False
-
 def submit_message(msg: str):
-    """Handle user sending a chat message."""
+    """Handle user sending a chat message with enhanced visualization support."""
     msg = (msg or "").strip()
     if not msg:
         return
 
     ensure_session()
     ss.messages.append({"role": "user", "text": msg})
-    
+    if detect_chart_request(msg):
+        with st.spinner("🎨 Creating your visualization..."):
+            viz_result = smart_visualization_request(msg)
+            
+            if viz_result.get("success") and viz_result.get("chart_data"):
+                if viz_result.get("ai_interpretation"):
+                    interpretation = viz_result["ai_interpretation"]
+                    ai_msg = f"📊 I'll create a {interpretation.get('kind', 'chart')} for you using {', '.join(interpretation.get('columns', []))}"
+                    ss.messages.append({"role": "bot", "text": ai_msg})
+                ss.messages.append({
+                    "role": "bot", 
+                    "text": "📈 Here's your visualization:",
+                    "chart_data": viz_result["chart_data"],
+                    "chart_type": "interactive"
+                })
+                return
+            elif viz_result.get("ai_response"):
+                ss.messages.append({"role": "bot", "text": viz_result["ai_response"]})
+                return
     try:
         payload = {
             "session_id": ss.session_id,
@@ -504,7 +703,13 @@ def submit_message(msg: str):
         ss.session_id = data.get("session_id", ss.session_id)
         bot_msg = data.get("answer", "(no response)")
         chart64 = data.get("chart_base64")
-        ss.messages.append({"role": "bot", "text": bot_msg, **({"chart": chart64} if chart64 else {})})
+        
+        message_data = {"role": "bot", "text": bot_msg}
+        if chart64:
+            message_data["chart"] = chart64
+            message_data["chart_type"] = "static"
+        
+        ss.messages.append(message_data)
     except Exception as e:
         ss.messages.append({"role": "bot", "text": f"⚠️ Error: {e}"})
 
@@ -631,18 +836,24 @@ ss.setdefault("forgot_password_message", "")
 ss.setdefault("forgot_password_success", False)
 ss.setdefault("login_error", "")
 ss.setdefault("user_info", None)
-ss.setdefault("session_id", None)
-ss.setdefault("context", "sample")
-ss.setdefault("messages", [])
-ss.setdefault("uploader", False)
 ss.setdefault("current_page", "menu")
+
+# FINBOT CHAT - 
+ss.setdefault("finbot_session_id", None)
+ss.setdefault("finbot_context", "sample")
+ss.setdefault("finbot_messages", [])
+ss.setdefault("finbot_uploader", False)
+
+# STOCK ANALYSIS -  
 ss.setdefault("stock_results", None)
 ss.setdefault("last_analyzed_symbol", "")
+ss.setdefault("stock_chat_messages", [])
+
+# ISLAMIC ANALYSIS - 
 ss.setdefault("islamic_messages", [])
 ss.setdefault("islamic_input_field", "")
 ss.setdefault("clear_islamic_input", False)
 
-# ---------- Page Configuration ----------
 st.set_page_config(
     page_title="Abacus FinBot", 
     page_icon="🤖", 
@@ -909,7 +1120,7 @@ div[data-testid="column"] {
 
 /* QUESTIONABLE - DARK ORANGE */
 .islamic-questionable {
-    background: linear-gradient(135deg, #fd7e14 0%, #e63946 100%) !important;
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
     color: white;
 }
 
@@ -1111,6 +1322,16 @@ button[data-testid*="primary"]:hover,
     box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4) !important;
 }
 
+/* CHART CONTAINER STYLES */
+.chart-container {
+    background: #F8F4EE !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    margin: 15px 0 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(210, 180, 140, 0.3) !important;
+}
+
 /* ANIMATED ICONS FOR SERVICES */
 @keyframes bounce {
     0%, 20%, 50%, 80%, 100% {
@@ -1165,7 +1386,7 @@ if not ss.chat_started:
     
     # Logo
     if LOGO.exists():
-        col1, col2 = st.columns([1, 1])
+        col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
             st.image(str(LOGO), width=280)
     else:
@@ -1182,7 +1403,7 @@ if not ss.chat_started:
     st.markdown("""
     <div style='text-align: center; font-size: 1.2rem; color: #666; margin: 20px auto 40px auto; 
                 font-weight: 500; max-width: 400px;'>
-        AI-Powered Financial Intelligence
+        AI-Powered Financial Intelligence with Advanced Data Visualization
     </div>
     """, unsafe_allow_html=True)
     
@@ -1280,7 +1501,7 @@ if ss.current_page == "menu":
                     <rect x="20" y="65" width="60" height="8" rx="4" fill="white" opacity="0.7"/>
                 </svg>
             </div>
-            <h3 style='margin: 0 0 10px 0; color: #2d3748; text-align: center;'>FinBot Chat</h3>
+            <h3 style='margin: 0 0 10px 0; color: #2d3748; text-align: center;'>FinBot Chat & Viz</h3>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Launch Chat", key="btn_finbot", use_container_width=True, type="primary"):
@@ -1359,11 +1580,11 @@ if ss.current_page == "menu":
             go_to_islamic()
             st.rerun()
 
-# ==================== FINBOT PAGE ====================
+# ==================== ENHANCED FINBOT PAGE WITH VISUALIZATIONS ====================
 elif ss.current_page == "finbot":
     show_page_logo()
     
-    # Simple header with back button - PERFECTLY CENTERED
+    # Header
     st.markdown("""
     <div style='width: 100%; display: flex; justify-content: center; align-items: center; 
                 margin: 20px 0; position: relative;'>
@@ -1378,61 +1599,104 @@ elif ss.current_page == "finbot":
         </div>
         <div style='text-align: center; margin: 0 auto;'>
             <h2 style='text-align: center; margin: 0; color: #2d3748; font-weight: 700;'>
-                💬 FinBot Chat
+                💬 FinBot Chat & Visualizations
             </h2>
         </div>
         <div style='position: absolute; right: 0;'>
     """, unsafe_allow_html=True)
     
-    if st.button("📁 Upload", key="upload_btn", help="Upload Excel/CSV"):
-        open_uploader()
+    if st.button("📁 Upload", key="finbot_upload_btn", help="Upload Excel/CSV"):
+        open_finbot_uploader()
     
-    st.markdown("""
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("</div></div>", unsafe_allow_html=True)
     
-    # Chat History
-    for m in ss.messages:
+    # FinBot Chat History - INDEPENDENT
+    for i, m in enumerate(ss.finbot_messages):
         cls = "user" if m["role"] == "user" else "bot"
         st.markdown(f"<div class='bub {cls}'>{m['text']}</div>", unsafe_allow_html=True)
-        if m.get("chart"):
-            st.image(f"data:image/png;base64,{m['chart']}", width=350)
+        
+        # Display charts
+        if m.get("chart_data"):
+            st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+            chart_key = f"finbot_plotly_chart_msg_{i}"
+            if display_plotly_chart(m["chart_data"], chart_key):
+                col_download, col_space = st.columns([0.3, 0.7])
+                with col_download:
+                    if st.button(f"📊 Download Chart", key=f"finbot_download_interactive_{i}"):
+                        chart_json = json.dumps(m["chart_data"], indent=2)
+                        st.download_button(
+                            "📄 Download Chart Data (.json)",
+                            chart_json,
+                            f"finbot_chart_{int(time.time())}.json",
+                            "application/json",
+                            key=f"finbot_download_json_{i}"
+                        )
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+        elif m.get("chart"):
+            st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+            st.image(f"data:image/png;base64,{m['chart']}", use_column_width=True)
+            col_download, col_space = st.columns([0.3, 0.7])
+            with col_download:
+                if st.button(f"💾 Download Image", key=f"finbot_download_static_{i}"):
+                    image_data = base64.b64decode(m['chart'])
+                    st.download_button(
+                        "🖼️ Download Chart (.png)",
+                        image_data,
+                        f"finbot_chart_{int(time.time())}.png",
+                        "image/png",
+                        key=f"finbot_download_png_{i}"
+                    )
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    # Upload Modal
-    if ss.uploader:
-        with st.expander("📁 Upload Financial Data", expanded=True):
-            st.file_uploader(
+    # FinBot Upload Modal
+    if ss.finbot_uploader:
+        with st.expander("📁 Upload Your Financial Data", expanded=True):
+            uploaded_file = st.file_uploader(
                 "Select Excel/CSV file",
                 type=["xlsx", "xls", "csv", "xlsm", "ods"],
-                key="file_uploader"
+                key="finbot_file_uploader",
+                help="Upload your financial data to analyze and visualize"
             )
             
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Cancel", key="cancel_upload"):
-                    cancel_upload()
+                if st.button("❌ Cancel", key="finbot_cancel_upload", use_container_width=True):
+                    cancel_finbot_upload()
             with col2:
-                if st.button("Upload", key="confirm_upload", 
-                           disabled=st.session_state.file_uploader is None, 
-                           type="primary"):
-                    confirm_upload()
+                if st.button("📤 Upload & Link to Chat", key="finbot_confirm_upload", 
+                           disabled=st.session_state.finbot_file_uploader is None, 
+                           type="primary", use_container_width=True):
+                    confirm_finbot_upload()
 
-    # Input interface
+    # Helpful message
+    if not ss.finbot_session_id and not ss.finbot_uploader:
+        st.info("💡 **Tip**: Upload your financial data first, then ask me questions about it or request visualizations!")
+
+    # FinBot Chat Input
     st.markdown("---")
-    with st.form("chart_form", clear_on_submit=True):
-        user_msg = st.text_input("💭 Message", key="user_input", placeholder="Ask your financial question…", 
-                      label_visibility="collapsed")
-        submitted = st.form_submit_button("📤 Send", use_container_width=True, type="primary")
+    with st.form("finbot_chart_form", clear_on_submit=True):
+        user_msg = st.text_input(
+            "💭 Ask about your data or request visualizations", 
+            key="finbot_user_input", 
+            placeholder="Examples: 'Show me spending by category', 'Create a pie chart of expenses', 'What's my highest expense?'", 
+            label_visibility="collapsed"
+        )
+        
+        col_context, col_send = st.columns([0.8, 0.2])
+        
+        with col_send:
+            submitted = st.form_submit_button("🚀 Send", use_container_width=True, type="primary")
+        
         if submitted:
-            submit_message(user_msg)
+            submit_finbot_message(user_msg)
             st.rerun()
 
 # ==================== STOCK ANALYSIS PAGE ====================
 elif ss.current_page == "stocks":
     show_page_logo()
     
-    # Simple header with back button - PERFECTLY CENTERED
+    # Header
     st.markdown("""
     <div style='width: 100%; display: flex; justify-content: center; align-items: center; 
                 margin: 20px 0; position: relative;'>
@@ -1460,7 +1724,7 @@ elif ss.current_page == "stocks":
         
         stock_symbol = st.text_input(
             "Stock symbol:",
-            placeholder="e.g., AAPL, TSLA, MSFT, GOOGL...",
+            placeholder="Ex: AAPL, TSLA, MSFT, GOOGL...",
             key="stock_input_main"
         )
         
@@ -1476,6 +1740,15 @@ elif ss.current_page == "stocks":
                     result = analyze_stock_request(stock_symbol)
                     ss.stock_results = result
                     ss.last_analyzed_symbol = stock_symbol
+                    ss.stock_chat_messages.append({
+                        "role": "user", 
+                        "text": f"Analyze {stock_symbol}"
+                    })
+                    if result.get("status") == "success":
+                        ss.stock_chat_messages.append({
+                            "role": "bot", 
+                            "text": f"✅ Analysis completed for {stock_symbol}"
+                        })
                     st.rerun()
         
         with col_b:
@@ -1484,15 +1757,15 @@ elif ss.current_page == "stocks":
                     with st.spinner("Getting price..."):
                         result = get_stock_price_request(stock_symbol)
                     if result.get("status") == "success":
-                        st.markdown(f"""
-                        <div class='success-card'>
-                            <h3>{stock_symbol}</h3>
-                            <h2>{result['price']}</h2>
-                            <p>Real-time price</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.error(result.get("message", "Error"))
+                        ss.stock_chat_messages.append({
+                            "role": "user", 
+                            "text": f"Get price for {stock_symbol}"
+                        })
+                        ss.stock_chat_messages.append({
+                            "role": "bot", 
+                            "text": f"💰 {stock_symbol}: {result['price']}"
+                        })
+                        st.rerun()
         
         with col_c:
             if st.button("ℹ️ Info", disabled=not stock_symbol, use_container_width=True):
@@ -1500,103 +1773,20 @@ elif ss.current_page == "stocks":
                     with st.spinner("Getting information..."):
                         result = get_stock_info_request(stock_symbol)
                     if result.get("status") == "success":
-                        try:
-                            company_data = json.loads(result["info"])
-                            
-                            if company_data.get("Current_Price"):
-                                st.metric("💰 Price", company_data["Current_Price"])
-                            
-                            if company_data.get("PE_Ratio"):
-                                try:
-                                    pe = float(company_data["PE_Ratio"])
-                                    st.metric("📊 P/E", f"{pe:.2f}")
-                                except:
-                                    st.metric("📊 P/E", "N/A")
-                            
-                            with st.expander("📋 Full details"):
-                                st.json(company_data)
-                                
-                        except json.JSONDecodeError:
-                            st.text_area("Information:", result["info"], height=200)
-                    else:
-                        st.error(result.get("message", "Error"))
-    
-    with col_sidebar:
-        st.markdown("#### 💡 Popular Stocks")
+                        ss.stock_chat_messages.append({
+                            "role": "user", 
+                            "text": f"Get info for {stock_symbol}"
+                        })
+                        ss.stock_chat_messages.append({
+                            "role": "bot", 
+                            "text": f"ℹ️ Company info retrieved for {stock_symbol}"
+                        })
+                        st.rerun()
         
-        popular_stocks = [
-            ("", "Select a stock", ""),
-            ("AAPL", "Apple", "🍎"), 
-            ("TSLA", "Tesla", "🚗"), 
-            ("GOOGL", "Google", "🔍"),
-            ("MSFT", "Microsoft", "💻"), 
-            ("AMZN", "Amazon", "📦"), 
-            ("NVDA", "NVIDIA", "🎮"),
-            ("META", "Meta", "📱"), 
-            ("NFLX", "Netflix", "🎬"), 
-            ("JPM", "JPMorgan", "🏦")
-        ]
-        
-        selected_option = st.selectbox(
-            "Choose:",
-            options=popular_stocks,
-            format_func=lambda x: f"{x[2]} {x[1]}" if x[0] else x[1],
-            key="stock_selector"
-        )
-        
-        if selected_option[0]:
-            symbol, name, emoji = selected_option
+        if ss.stock_results and ss.stock_results.get("status") == "success":
+            st.markdown("---")
+            analyzed_symbol = ss.stock_results.get('symbol') or ss.last_analyzed_symbol
             
-            st.markdown(f"**{emoji} {symbol}**")
-            
-            col_action1, col_action2 = st.columns(2)
-            
-            with col_action1:
-                if st.button("💰", key=f"price_selected", help="Get Price"):
-                    with st.spinner("Loading..."):
-                        result = get_stock_price_request(symbol)
-                    
-                    if result.get("status") == "success":
-                        st.success(f"**{symbol}**: {result['price']}")
-                    else:
-                        st.error(result.get("message", "Error"))
-            
-            with col_action2:
-                if st.button("ℹ️", key=f"info_selected", help="Get Info"):
-                    with st.spinner("Loading..."):
-                        result = get_stock_info_request(symbol)
-                    
-                    if result.get("status") == "success":
-                        try:
-                            company_data = json.loads(result["info"])
-                            
-                            if company_data.get("Current_Price"):
-                                st.metric("Price", company_data["Current_Price"])
-                            
-                            with st.expander("Details", expanded=False):
-                                st.json(company_data)
-                                
-                        except json.JSONDecodeError:
-                            st.text_area("Info:", result["info"], height=150)
-                    else:
-                        st.error(result.get("message", "Error"))
-            
-            if st.button("📊 Analyze", key=f"analyze_selected", type="primary"):
-                result = analyze_stock_request(symbol)
-                ss.stock_results = result
-                ss.last_analyzed_symbol = symbol
-                st.rerun()
-        
-        else:
-            st.info("Select a stock to start analysis.")
-    
-    # Analysis results
-    if ss.stock_results:
-        st.markdown("---")
-        analyzed_symbol = ss.stock_results.get('symbol') or ss.last_analyzed_symbol
-        
-        if ss.stock_results.get("status") == "success":
-            st.balloons()
             st.markdown(f"""
             <div class='stock-card'>
                 <h2>🎉 Analysis Complete - {analyzed_symbol}</h2>
@@ -1610,50 +1800,35 @@ elif ss.current_page == "stocks":
                 if ss.stock_results.get("analysis"):
                     st.markdown(ss.stock_results["analysis"])
                     
-                    st.download_button(
-                        "📝 Download Analysis (.md)",
-                        ss.stock_results["analysis"], 
-                        f"analysis_{analyzed_symbol}.md", 
-                        "text/markdown",
-                        use_container_width=True,
-                        type="primary"
-                    )
-                else:
-                    st.warning("Analysis not available")
-            
             with tab2:
                 if ss.stock_results.get("recommendation"):
                     st.markdown(ss.stock_results["recommendation"])
-                    
-                    st.download_button(
-                        "💡 Download Recommendations (.md)",
-                        ss.stock_results["recommendation"], 
-                        f"recommendation_{analyzed_symbol}.md", 
-                        "text/markdown",
-                        use_container_width=True,
-                        type="primary"
-                    )
-                else:
-                    st.warning("Recommendations not available")
-            
-            col_clear, col_new = st.columns(2)
-            with col_clear:
-                if st.button("🗑️ Clear", use_container_width=True):
-                    ss.stock_results = None
-                    ss.last_analyzed_symbol = ""
-                    st.rerun()
-            with col_new:
-                if st.button("🔄 New Analysis", type="primary", use_container_width=True):
-                    ss.stock_results = None
-                    ss.last_analyzed_symbol = ""
-                    st.rerun()
-        else:
-            st.error(f"❌ {ss.stock_results.get('message', 'Error')}")
-            if st.button("🔄 Retry", type="primary"):
-                ss.stock_results = None
-                st.rerun()
 
-# ==================== ISLAMIC ANALYSIS PAGE - SIMPLIFIED INTERFACE ====================
+    with col_sidebar:
+        st.markdown("#### 💬 Stock Chat")
+        for i, m in enumerate(ss.stock_chat_messages):
+            cls = "user" if m["role"] == "user" else "bot"
+            st.markdown(f"<div class='bub {cls}' style='font-size: 0.9rem; padding: 8px 12px;'>{m['text']}</div>", unsafe_allow_html=True)
+        
+        with st.form("stock_chat_form", clear_on_submit=True):
+            stock_question = st.text_input(
+                "Ask about stocks:",
+                placeholder="Ex: What's Tesla's P/E ratio?",
+                key="stock_chat_input"
+            )
+            if st.form_submit_button("💬 Ask", use_container_width=True):
+                if stock_question.strip():
+                    ss.stock_chat_messages.append({
+                        "role": "user", 
+                        "text": stock_question
+                    })
+                    ss.stock_chat_messages.append({
+                        "role": "bot", 
+                        "text": "I can help with stock analysis. Use the buttons above to analyze specific stocks!"
+                    })
+                    st.rerun()
+
+# ==================== ISLAMIC ANALYSIS PAGE ====================
 elif ss.current_page == "islamic":
     show_page_logo()
     
@@ -1738,7 +1913,7 @@ elif ss.current_page == "islamic":
         with col_input:
             user_input = st.text_input(
                 "Ask your Islamic investment question:",
-                placeholder="e.g., Is Microsoft halal? Can I invest in Amazon? Bitcoin Islamic analysis?",
+                placeholder="Ex: Is Microsoft halal? Can I invest in Amazon? Bitcoin Islamic analysis?",
                 key="islamic_chat_input",
                 label_visibility="collapsed"
             )
@@ -1770,7 +1945,6 @@ elif ss.current_page == "islamic":
 - **Confidence:** {confidence_level}
 - **Sources:** {len(sources_used)} types used
 - **Internet Research:** ✅ Real-time data
-
 """
                 
                 ss.islamic_messages.append({
@@ -1797,11 +1971,12 @@ elif ss.current_page == "islamic":
                 })
             
             st.rerun()
+
 # ---------- Minimal Footer ----------
 if ss.current_page != "menu":
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; margin: 20px 0; color: #666; font-size: 0.9rem;'>
-        🤖 <strong>Abacus FinBot</strong> - Multi-Agent AI Platform with Expert Islamic Analysis
+        🤖 <strong>Abacus FinBot</strong> - Multi-Agent AI Platform with Advanced Data Visualization
     </div>
     """, unsafe_allow_html=True)

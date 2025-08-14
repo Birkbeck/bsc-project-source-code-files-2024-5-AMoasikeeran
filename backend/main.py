@@ -8,7 +8,6 @@ from config import settings
 from routes import router
 from Database.database import create_tables, add_test_users
 
-# Default configuration variables (since they're not in config.py)
 ENVIRONMENT = "development"
 PORT = 8000
 
@@ -23,11 +22,11 @@ except ImportError as e:
     SHARIA_EXPERT_AVAILABLE = False
     sharia_expert_agent = None
 
-# --- FastAPI App Setup ---
+# --- Enhanced FastAPI App Setup ---
 app = FastAPI(
-    title="Abacus FinBot - Sharia Expert Platform",
-    version="3.0.0",
-    description="AI-powered Sharia investment expert with real-time research capabilities"
+    title="Abacus FinBot - Enhanced Banking Analytics Platform",
+    version="3.2.0",
+    description="AI-powered banking transaction analysis with comprehensive chart generation and Sharia expert capabilities"
 )
 
 app.add_middleware(
@@ -40,29 +39,84 @@ app.add_middleware(
 
 # --- Global Agent Initialization Status ---
 agents_initialized = {
-    "agent01": False,  # Chat FinBot
+    "agent01": False,  # Enhanced Chat FinBot with Banking Analytics
     "agent02": False,  # Stock Analysis  
     "agent03": False   # Sharia Expert with Research Tools
 }
 
-# --- Startup Event ---
+# ========== FUNCTION TO ADD BASE USERS ==========
+def add_custom_users():
+    """Add ONLY the 3 base users"""
+    from Database.database import SessionLocal, User, get_password_hash
+    
+    # 👇 ONLY THE 3 BASE USERS
+    custom_users = [
+        {"name": "Admin User", "email": "admin@finbot.com", "password": "admin123"},
+        {"name": "Test User", "email": "test@finbot.com", "password": "test123"},
+        {"name": "Demo User", "email": "demo@finbot.com", "password": "demo123"},
+    ]
+    
+    db = SessionLocal()
+    added_count = 0
+    
+    try:
+        print("👥 Adding base users...")
+        
+        for user_data in custom_users:
+            # Check if user already exists
+            existing_user = db.query(User).filter(User.email == user_data["email"]).first()
+            
+            if not existing_user:
+                # Create new user
+                new_user = User(
+                    name=user_data["name"],
+                    email=user_data["email"],
+                    password_hash=get_password_hash(user_data["password"])
+                )
+                db.add(new_user)
+                added_count += 1
+                print(f"  ➕ Added: {user_data['name']} ({user_data['email']})")
+            else:
+                print(f"  ✅ Already exists: {user_data['email']}")
+        
+        if added_count > 0:
+            db.commit()
+            print(f"✅ {added_count} base users added!")
+        else:
+            print("✅ All base users already exist!")
+            
+    except Exception as e:
+        print(f"❌ Error adding users: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+# --- Enhanced Startup Event ---
 @app.on_event("startup")
 async def startup_event():
     global agents_initialized
 
-    print("🚀 Starting Abacus FinBot Sharia Expert Platform...")
+    print("🚀 Starting Abacus FinBot Enhanced Banking Analytics Platform...")
     print(f"🌍 Environment: {ENVIRONMENT}")
     print(f"🔌 Port: {PORT}")
 
-    # ========== AGENT 01 (Chat FinBot) ==========
+    # ========== AGENT 01 (Enhanced Chat FinBot with Banking Analytics) + AUTO USER CREATION ==========
     try:
-        print("\n📊 Initializing Agent01 (Chat FinBot)...")
+        print("\n📊 Initializing Agent01 (Enhanced Chat FinBot)...")
         create_tables()
         print("✅ Database tables created/verified")
-        add_test_users()
-        print("✅ Test users initialized")
+        
+        # 🔥 AUTOMATIC ADDITION OF BASE USERS
+        add_custom_users()
+        
+        # Test enhanced banking capabilities
+        print("✅ Banking transaction analysis enabled")
+        print("✅ Enhanced chart generation (12+ types)")
+        print("✅ Automatic data categorization")
+        print("✅ Financial insights engine")
+        
         agents_initialized["agent01"] = True
-        print("✅ Agent01 (Chat FinBot) ready!")
+        print("✅ Agent01 (Enhanced Chat FinBot with Banking Analytics) ready!")
     except Exception as e:
         print(f"❌ Error Agent01: {e}")
         agents_initialized["agent01"] = False
@@ -73,6 +127,8 @@ async def startup_event():
         # Test import of stock tools
         from Agent02.tools import get_current_stock_price
         print("✅ Stock analysis tools imported")
+        print("✅ Real-time price feeds")
+        print("✅ GPT-4o analysis engine")
         agents_initialized["agent02"] = True
         print("✅ Agent02 (Stock Analysis) ready!")
     except Exception as e:
@@ -114,22 +170,33 @@ async def startup_event():
         print(f"❌ Error Agent03: {e}")
         agents_initialized["agent03"] = False
 
-    # ========== SUMMARY ==========
-    print("\n" + "="*70)
-    print("🕌 ABACUS FINBOT - SHARIA EXPERT PLATFORM")
-    print("="*70)
+    # ========== ENHANCED SUMMARY ==========
+    print("\n" + "="*80)
+    print("🏦 ABACUS FINBOT - ENHANCED BANKING ANALYTICS PLATFORM")
+    print("="*80)
     total_agents = sum(agents_initialized.values())
     print(f"📊 Active agents: {total_agents}/3")
     print("\n📋 Agent status:")
 
     agents_status = [
-        ("Agent01", "Chat FinBot + File Upload", agents_initialized["agent01"]),
+        ("Agent01", "Enhanced Chat FinBot + Banking Analytics", agents_initialized["agent01"]),
         ("Agent02", "Stock Analysis GPT-4o", agents_initialized["agent02"]),
         ("Agent03", "Sharia Expert + Research Tools", agents_initialized["agent03"])
     ]
     for agent, description, status in agents_status:
         status_icon = "✅" if status else "❌"
         print(f"  {status_icon} {agent}: {description}")
+
+    if agents_initialized["agent01"]:
+        print(f"\n🏦 Agent01 - Enhanced Banking Capabilities:")
+        print("   📊 Automatic transaction categorization")
+        print("   💰 Income/Expense/Savings classification")
+        print("   📈 12+ chart types (Bar, Pie, Line, Scatter, Histogram, Box, Area, etc.)")
+        print("   🤖 AI-powered financial insights")
+        print("   📋 Spending analysis & budget recommendations")
+        print("   📅 Time-based trend analysis")
+        print("   📊 Interactive chart generation studio")
+        print("   🎯 Banking dashboard with key metrics")
 
     if agents_initialized["agent03"]:
         print(f"\n🕌 Agent03 - Sharia Expert capabilities:")
@@ -142,6 +209,11 @@ async def startup_event():
         print("   📈 Sharia ratio calculations")
         print("   🎯 Confidence-based analysis")
 
+    print(f"\n🎨 Chart Generation Features:")
+    print("   📊 Bar Charts • 🥧 Pie Charts • 📈 Line Charts • ⭐ Scatter Plots")
+    print("   📋 Histograms • 📦 Box Plots • 🏔️ Area Charts • 📚 Stacked Bars")
+    print("   🍩 Donut Charts • 🌊 Waterfall Charts • 🔥 Heatmaps • 🎻 Violin Plots")
+
     print(f"\n🤖 AI Model: {settings.MODEL_NAME}")
     print(f"🔑 OpenAI configured: {'✅' if settings.OPENAI_API_KEY else '❌'}")
     
@@ -149,27 +221,41 @@ async def startup_event():
         print("🌐 API Docs: http://localhost:8000/docs")
         print("🔍 Global health: http://localhost:8000/health/all")
 
-    print("\n🚀 SHARIA EXPERT PLATFORM READY!")
-    print("🕌 Advanced Islamic investment analysis with research tools")
+    print("\n🚀 ENHANCED BANKING ANALYTICS PLATFORM READY!")
+    print("🏦 Professional banking transaction analysis with comprehensive visualization")
+    
+    # 👇 DISPLAY AVAILABLE ACCOUNTS
+    print("\n🔐 AVAILABLE USER ACCOUNTS:")
+    print("   admin@finbot.com / admin123")
+    print("   test@finbot.com / test123") 
+    print("   demo@finbot.com / demo123")
     
     if ENVIRONMENT == "development":
-        print("📱 You can now launch the frontend interface")
-        print("\n💡 Expert endpoints available:")
-        print("   POST /islamic/expert-analyze - Comprehensive analysis")
-        print("   POST /islamic/expert-alternatives - Research-based alternatives")
-        print("   POST /islamic/research-company - Company research")
-        print("   GET /islamic/expert-status - Agent capabilities")
+        print("📱 You can now launch the enhanced frontend interface")
+        print("\n💡 Enhanced endpoints available:")
+        print("   POST /upload - Enhanced file upload with banking detection")
+        print("   POST /chat - AI chat with banking intelligence")
+        print("   POST /generate-chart - Comprehensive chart generation")
+        print("   POST /banking-analysis - Professional banking analysis")
+        print("   GET /chart-types - All supported chart types")
+        
+        if SHARIA_EXPERT_AVAILABLE:
+            print("\n🕌 Expert Islamic endpoints:")
+            print("   POST /islamic/expert-analyze - Comprehensive analysis")
+            print("   POST /islamic/expert-alternatives - Research-based alternatives")
+            print("   POST /islamic/research-company - Company research")
+            print("   GET /islamic/expert-status - Agent capabilities")
 
     print(f"\n⏱️ Startup completed in {time.time():.1f}s")
 
-# --- Include API Routes ---
+# --- Include Enhanced API Routes ---
 app.include_router(router)
 
 @app.get("/")
 async def root():
     total_agents = sum(agents_initialized.values())
     
-    # Sharia expert info
+    # Enhanced info about Sharia expert
     expert_info = {}
     if SHARIA_EXPERT_AVAILABLE and sharia_expert_agent:
         try:
@@ -183,16 +269,25 @@ async def root():
             expert_info = {"error": "Status unavailable"}
     
     return {
-        "application": "Abacus FinBot - Sharia Expert Platform",
-        "version": "3.0.0",
-        "description": "Advanced Sharia investment expert with real-time research tools",
+        "application": "Abacus FinBot - Enhanced Banking Analytics Platform",
+        "version": "3.2.0",
+        "description": "Professional banking transaction analysis with comprehensive chart generation and Sharia expert capabilities",
         "status": "ready" if total_agents >= 2 else "partial",
-        "specialization": "Expert Islamic Finance Analysis with Research Capabilities",
+        "specialization": "Enhanced Banking Analytics with Advanced Visualization",
         "agents": {
             "agent01": {
-                "name": "Chat FinBot",
-                "description": "AI chat with Excel/CSV file analysis",
-                "status": "✅" if agents_initialized["agent01"] else "❌"
+                "name": "Enhanced Chat FinBot",
+                "description": "AI chat with banking analytics and 12+ chart types",
+                "status": "✅" if agents_initialized["agent01"] else "❌",
+                "enhanced_features": [
+                    "Automatic transaction categorization",
+                    "Income/Expense/Savings classification", 
+                    "12+ chart types support",
+                    "Banking dashboard",
+                    "Financial insights engine",
+                    "Spending analysis",
+                    "Budget recommendations"
+                ]
             },
             "agent02": {
                 "name": "Stock Analysis",
@@ -206,6 +301,26 @@ async def root():
                 "expert_info": expert_info
             }
         },
+        "banking_capabilities": {
+            "transaction_analysis": agents_initialized["agent01"],
+            "automatic_categorization": agents_initialized["agent01"],
+            "financial_insights": agents_initialized["agent01"],
+            "spending_breakdown": agents_initialized["agent01"],
+            "budget_analysis": agents_initialized["agent01"],
+            "time_series_analysis": agents_initialized["agent01"],
+            "dashboard_metrics": agents_initialized["agent01"]
+        },
+        "chart_capabilities": {
+            "total_chart_types": 12,
+            "supported_types": [
+                "bar", "pie", "line", "scatter", "histogram", "box", 
+                "area", "stacked_bar", "donut", "waterfall", "heatmap", "violin"
+            ],
+            "banking_optimized": ["pie", "bar", "line", "waterfall", "area", "stacked_bar"],
+            "interactive_generation": agents_initialized["agent01"],
+            "auto_chart_selection": agents_initialized["agent01"],
+            "enhanced_styling": agents_initialized["agent01"]
+        },
         "expert_capabilities": {
             "real_time_research": agents_initialized["agent03"],
             "yahoo_finance_integration": agents_initialized["agent03"],
@@ -217,12 +332,21 @@ async def root():
             "ratio_calculations": agents_initialized["agent03"]
         },
         "features": {
-            "chat_ai": "Advanced financial chat with file upload",
+            "enhanced_chat_ai": "Advanced financial chat with banking intelligence",
+            "banking_analytics": "Professional transaction analysis and categorization",
+            "comprehensive_charts": "12+ chart types with smart generation",
             "stock_analysis": "Real-time stock analysis and recommendations",
             "expert_sharia_analysis": "Comprehensive Islamic investment screening",
             "research_tools": "Real-time company and market research",
             "automated_screening": "Haram keyword and ratio analysis",
             "ai_model": settings.MODEL_NAME
+        },
+        "enhanced_endpoints": {
+            "banking_analysis": "/banking-analysis",
+            "chart_generation": "/generate-chart",
+            "chart_types": "/chart-types",
+            "enhanced_upload": "/upload",
+            "enhanced_chat": "/chat"
         },
         "expert_endpoints": {
             "comprehensive_analysis": "/islamic/expert-analyze",
@@ -243,7 +367,8 @@ async def root():
 async def readiness_check():
     total_agents = sum(agents_initialized.values())
     
-    # Detailed expert status
+    # Enhanced detailed status
+    banking_ready = agents_initialized["agent01"]
     expert_ready = False
     expert_details = {}
     
@@ -264,61 +389,88 @@ async def readiness_check():
         "agents_ready": total_agents,
         "total_agents": 3,
         "all_systems": "operational" if total_agents == 3 else "partial",
+        "banking_analytics": "ready" if banking_ready else "limited",
         "expert_analysis": "ready" if expert_ready else "limited",
         "expert_details": expert_details,
+        "banking_features": {
+            "transaction_analysis": banking_ready,
+            "chart_generation": banking_ready,
+            "financial_insights": banking_ready,
+            "dashboard_metrics": banking_ready
+        },
+        "chart_capabilities": {
+            "total_types": 12 if banking_ready else 0,
+            "interactive_studio": banking_ready,
+            "auto_selection": banking_ready
+        },
         "openai_configured": bool(settings.OPENAI_API_KEY),
         "research_tools": "available" if agents_initialized["agent03"] else "unavailable",
-        "platform_type": "Sharia Expert with Research Tools"
+        "platform_type": "Enhanced Banking Analytics with Comprehensive Charts"
     }
 
 @app.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "service": "abacus-finbot-sharia-expert",
-        "version": "3.0.0",
+        "service": "abacus-finbot-enhanced-banking",
+        "version": "3.2.0",
         "environment": ENVIRONMENT,
         "port": PORT,
         "agents": agents_initialized,
+        "banking_analytics": agents_initialized["agent01"],
+        "chart_generation": agents_initialized["agent01"],
         "openai_configured": bool(settings.OPENAI_API_KEY),
         "expert_available": SHARIA_EXPERT_AVAILABLE,
-        "research_tools": agents_initialized["agent03"]
+        "research_tools": agents_initialized["agent03"],
+        "platform_features": {
+            "banking_transaction_analysis": agents_initialized["agent01"],
+            "comprehensive_chart_generation": agents_initialized["agent01"],
+            "financial_dashboard": agents_initialized["agent01"],
+            "ai_insights": agents_initialized["agent01"],
+            "stock_analysis": agents_initialized["agent02"],
+            "sharia_expert": agents_initialized["agent03"]
+        }
     }
 
 if __name__ == "__main__":
-    import os
-    
-    # Automatic Render environment detection
-    is_render = os.getenv("RENDER") == "true" or os.getenv("PORT") is not None
-    
-    # Port configuration - Render uses the PORT variable
-    port = int(os.environ.get("PORT", 8000))
-    
-    # Environment configuration
-    environment = "production" if is_render else ENVIRONMENT
-    
-    print(f"🚀 Starting Abacus FinBot Backend...")
-    print(f"🌍 Environment: {environment}")
-    print(f"🔌 Port: {port}")
-    print(f"🖥️  Render detected: {'✅' if is_render else '❌'}")
-    print(f"🔑 OpenAI Key configured: {'✅' if settings.OPENAI_API_KEY else '❌'}")
-    
-    if is_render or environment == "production":
-        print("🌟 PRODUCTION MODE - Render Deployment")
+    if ENVIRONMENT == "production":
+        print("🌟 Starting Enhanced Banking Analytics Platform in PRODUCTION mode...")
         uvicorn.run(
             "main:app",
-            host="0.0.0.0",  # IMPORTANT: 0.0.0.0 for Render
-            port=port,
-            reload=False,    # No reload in production
-            log_level="info",
-            access_log=True
+            host="0.0.0.0",
+            port=PORT,
+            reload=False,
+            log_level="info"
         )
     else:
-        print("🛠️ DEVELOPMENT MODE")
+        print("🌟 Starting Enhanced Banking Analytics Platform in DEVELOPMENT mode...")
+        print("⚠️  WAIT for the message '🚀 ENHANCED BANKING ANALYTICS PLATFORM READY!'")
+        print("📱 Then launch the interface: streamlit run UI_streamlit.py")
+        print("🌐 FastAPI: http://localhost:8000")
+        print("📚 Docs: http://localhost:8000/docs")
+        print("\n🏦 Enhanced Banking Features:")
+        print("   📊 Automatic transaction categorization")
+        print("   💰 Income/Expense/Savings analysis")
+        print("   📈 12+ professional chart types")
+        print("   🤖 AI-powered financial insights")
+        print("   📋 Banking dashboard with key metrics")
+        print("\n🔍 Enhanced endpoints to test:")
+        print("   POST /upload - Upload with banking detection")
+        print("   POST /banking-analysis - Professional analysis")
+        print("   POST /generate-chart - Comprehensive charts")
+        print("   GET /chart-types - All supported charts")
+        
+        if SHARIA_EXPERT_AVAILABLE:
+            print("\n🕌 Expert Islamic endpoints:")
+            print("   POST /islamic/expert-analyze")
+            print("   POST /islamic/expert-alternatives") 
+            print("   POST /islamic/research-company")
+            print("   GET /islamic/expert-status")
+
         uvicorn.run(
             "main:app",
             host="127.0.0.1",
             port=8000,
             reload=True,
-            log_level="debug"
+            log_level="info"
         )

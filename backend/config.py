@@ -1,22 +1,15 @@
-import os
 from pydantic import BaseModel
 try:
     from pydantic_settings import BaseSettings
 except ImportError:
     from pydantic import BaseSettings
+
 class Settings(BaseSettings):
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_API_KEY: str = "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"
     MODEL_NAME: str = "gpt-4o"
     SAMPLE_MIN_ROWS: int = 200
     SAMPLE_MAX_ROWS: int = 400
     MAX_FILE_BYTES: int = 10 * 1024 * 1024
-    ALLOWED_ORIGINS: list[str] = [
-        "http://localhost:8501", 
-        "https://*.streamlit.app", 
-        "https://abacus-finbot.streamlit.app",
-        "*"  
-    ]
-    ENVIRONMENT: str = os.getenv("ENVIRONMENT", 
-                               "production" if os.getenv("RENDER") == "true" else "development")
-    PORT: int = int(os.getenv("PORT", 8000))
+    ALLOWED_ORIGINS: list[str] = ["*"]
+
 settings = Settings()
