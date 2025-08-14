@@ -433,12 +433,16 @@ async def health_check():
     }
 
 if __name__ == "__main__":
+    import os
+  
+    port = int(os.environ.get("PORT", settings.PORT))
+    
     if settings.ENVIRONMENT == "production":
         print("🌟 Starting Enhanced Banking Analytics Platform in PRODUCTION mode...")
         uvicorn.run(
             "main:app",
-            host="0.0.0.0",
-            port=settings.PORT,
+            host="0.0.0.0",   
+            port=port,       
             reload=False,
             log_level="info"
         )
@@ -446,13 +450,13 @@ if __name__ == "__main__":
         print("🌟 Starting Enhanced Banking Analytics Platform in DEVELOPMENT mode...")
         print("⚠️  WAIT for the message '🚀 ENHANCED BANKING ANALYTICS PLATFORM READY!'")
         print("📱 Then launch the interface: streamlit run UI_streamlit.py")
-        print("🌐 FastAPI: http://localhost:8000")
-        print("📚 Docs: http://localhost:8000/docs")
+        print(f"🌐 FastAPI: http://0.0.0.0:{port}")
+        print(f"📚 Docs: http://0.0.0.0:{port}/docs")
         
         uvicorn.run(
             "main:app",
-            host="127.0.0.1",
-            port=settings.PORT,
+            host="0.0.0.0",  
+            port=port,       
             reload=True,
             log_level="info"
         )
