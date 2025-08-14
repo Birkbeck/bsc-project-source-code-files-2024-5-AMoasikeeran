@@ -362,6 +362,10 @@ async def root():
         "environment": ENVIRONMENT,
         "openai_configured": bool(settings.OPENAI_API_KEY)
     }
+@app.head("/")
+async def root_head():
+    """Handle HEAD requests for health checks"""
+    return {}
 
 @app.get("/ready")
 async def readiness_check():
@@ -431,32 +435,17 @@ async def health_check():
             "sharia_expert": agents_initialised["agent03"]
         }
     }
-
 if __name__ == "__main__":
-    import os
-  
     port = int(os.environ.get("PORT", settings.PORT))
+    print(f"🌟 Starting Enhanced Banking Analytics Platform...")
+    print(f"🔌 Port: {port}")
+    print(f"🌍 Environment: {ENVIRONMENT}")
+    print(f"🔗 Host: 0.0.0.0 (Render compatible)")
     
-    if settings.ENVIRONMENT == "production":
-        print("🌟 Starting Enhanced Banking Analytics Platform in PRODUCTION mode...")
-        uvicorn.run(
-            "main:app",
-            host="0.0.0.0",   
-            port=port,       
-            reload=False,
-            log_level="info"
-        )
-    else:
-        print("🌟 Starting Enhanced Banking Analytics Platform in DEVELOPMENT mode...")
-        print("⚠️  WAIT for the message '🚀 ENHANCED BANKING ANALYTICS PLATFORM READY!'")
-        print("📱 Then launch the interface: streamlit run UI_streamlit.py")
-        print(f"🌐 FastAPI: http://0.0.0.0:{port}")
-        print(f"📚 Docs: http://0.0.0.0:{port}/docs")
-        
-        uvicorn.run(
-            "main:app",
-            host="0.0.0.0",  
-            port=port,       
-            reload=True,
-            log_level="info"
-        )
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",  
+        port=port,       
+        reload=False,     
+        log_level="info" 
+    )
