@@ -34,7 +34,7 @@ sns.set_palette("husl")
 
 SYSTEM_PROMPT = (
     # System prompt for OpenAI agent
-    "You are Abacus, an AI financial advisor and data visualization expert."
+    "You are Abacus, an AI financial adviser and data visualisation expert."
     "If a user ever asks for any advice or suggestions, make sure to assist and guide them properly."
     "Always express monetary values in UK pounds sterling (symbol '£', code 'GBP')."
     "If the source data uses another currency, first convert amounts approximately to GBP and mention the assumed rate in parentheses."
@@ -45,12 +45,12 @@ SYSTEM_PROMPT = (
     "     • Dining & Entertainment  • Subscriptions  • Education  • Income\n"
     "     • Transfers  • Other\n"
     "  3. If a transaction is truly ambiguous, label it 'Uncategorised' and flag it.\n\n"
-    "◆ **Visualization capabilities**\n"
+    "◆ **Visualisation capabilities**\n"
     "  • Support for all chart types: bar, line, pie, scatter, histogram, box, violin, heatmap, area, donut\n"
     "  • Interactive charts using Plotly for web display\n"
     "  • Static charts using Matplotlib/Seaborn for reports\n"
     "  • Automatic chart type selection based on data characteristics\n"
-    "  • Multi-series and comparison visualizations\n\n"
+    "  • Multi-series and comparison visualisations\n\n"
     "◆ **Aggregation guidance**\n"
     "  • Whenever the user asks for a *summary*, *spending*, or *break-down*, "
     "aggregate totals by category **and** by any date range mentioned (inclusive).\n"
@@ -88,7 +88,7 @@ SYSTEM_PROMPT = (
 _CURRENCY_RE = re.compile(r"[^\d.,\-]")
 _MONEY_RE = re.compile(r"(amount|cost|price|total|value|balance|paid|spend|debit|credit)", re.I)
 
-# --- Data Cleaning Utilities ---
+# --- Data Cleansing Utilities ---
 def coerce_numeric(col: pd.Series) -> pd.Series:
     """Try VERY HARD to turn a column into floats."""
     if pd.api.types.is_numeric_dtype(col):
@@ -98,12 +98,12 @@ def coerce_numeric(col: pd.Series) -> pd.Series:
     if pd.api.types.is_bool_dtype(col):
         return col.astype("int64")
     if col.dtype == "object":
-        cleaned = (
+        cleansed = (
             col.astype(str)
                .str.replace(_CURRENCY_RE, "", regex=True)
                .str.replace(",", "")
         )
-        nums = pd.to_numeric(cleaned, errors="coerce")
+        nums = pd.to_numeric(cleansed, errors="coerce")
         if nums.notna().mean() >= 0.10:
             return nums
     return col
@@ -144,8 +144,8 @@ def summarise_dataframe(df: pd.DataFrame) -> dict:
         if pd.api.types.is_numeric_dtype(s):
             nums = pd.to_numeric(s, errors="coerce")
             info.update(
-                min=float(nums.min()),
-                max=float(nums.max()),
+                minimum=float(nums.min()),
+                maximum=float(nums.max()),
                 mean=float(nums.mean()),
                 sum=float(nums.sum()),
             )
@@ -212,9 +212,9 @@ def _best_numeric(df: pd.DataFrame) -> str | None:
             return c
     return max(nums, key=lambda c: df[c].abs().sum())
 
-# --- Chart Data Cleaning ---
-def _clean_chart_data(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
-    """Clean chart data: drop nulls, clamp outliers, round, remove negatives."""
+# --- Chart Data Cleansing ---
+def _cleanse_chart_data(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    """Cleanse chart data: drop nulls, clamp outliers, round, remove negatives."""
     df = df.dropna(subset=cols)
     for c in cols:
         if c not in df.columns or not is_numeric_dtype(df[c]):
@@ -231,9 +231,9 @@ def create_interactive_chart(df: pd.DataFrame, kind: str, columns: list[str], ti
     """Create interactive charts using Plotly and return as JSON."""
     cols = [c for c in columns if c in df.columns]
     if not cols:
-        raise ValueError(f"No valid columns among {columns}")
+        raise ValueError(f"No valid columns amongst {columns}")
 
-    df = _clean_chart_data(df, cols)
+    df = _cleanse_chart_data(df, cols)
     if len(df) < 3:
         return json.dumps({"action": "error", "message": "Not enough valid data to plot."})
 
@@ -270,8 +270,8 @@ def create_interactive_chart(df: pd.DataFrame, kind: str, columns: list[str], ti
                 
         elif kind == "scatter":
             if len(nums) >= 2:
-                color_col = cats[0] if cats else None
-                fig = px.scatter(df, x=nums[0], y=nums[1], color=color_col, 
+                colour_col = cats[0] if cats else None
+                fig = px.scatter(df, x=nums[0], y=nums[1], color=colour_col, 
                                title=title or f"Scatter: {nums[1]} vs {nums[0]}")
             elif cats and nums:
                 fig = px.scatter(df, x=cats[0], y=nums[0], title=title or f"Scatter: {nums[0]} by {cats[0]}")
@@ -294,8 +294,8 @@ def create_interactive_chart(df: pd.DataFrame, kind: str, columns: list[str], ti
                 
         elif kind == "heatmap":
             if len(nums) >= 2:
-                corr_data = df[nums].corr()
-                fig = px.imshow(corr_data, text_auto=True, title=title or "Correlation Heatmap")
+                correlation_data = df[nums].corr()
+                fig = px.imshow(correlation_data, text_auto=True, title=title or "Correlation Heatmap")
                 
         elif kind == "area":
             if cats and nums:
@@ -336,16 +336,16 @@ def create_interactive_chart(df: pd.DataFrame, kind: str, columns: list[str], ti
 def make_chart(df: pd.DataFrame, kind: str, columns: list[str], prompt: str = "", interactive: bool = False) -> str:
     """
     Create a chart and return it base-64 encoded (static) or as JSON (interactive).
-    Cleans data before plotting. Returns error JSON if not enough valid data.
+    Cleanses data before plotting. Returns error JSON if not enough valid data.
     """
     if interactive:
         return create_interactive_chart(df, kind, columns, prompt)
     
     cols = [c for c in columns if c in df.columns]
     if not cols:
-        raise ValueError(f"No valid columns among {columns}")
+        raise ValueError(f"No valid columns amongst {columns}")
 
-    df = _clean_chart_data(df, cols)
+    df = _cleanse_chart_data(df, cols)
     if len(df) < 3:
         return json.dumps({"action": "error", "message": "Not enough valid data to plot."})
 
@@ -465,7 +465,7 @@ def make_chart(df: pd.DataFrame, kind: str, columns: list[str], prompt: str = ""
         logger.error(f"Error creating chart: {e}")
         return json.dumps({"action": "error", "message": f"Chart creation failed: {str(e)}"})
 
-# --- Advanced Visualization Functions ---
+# --- Advanced Visualisation Functions ---
 def suggest_chart_type(df: pd.DataFrame, columns: list[str]) -> str:
     """Suggest the best chart type based on data characteristics."""
     cats, nums = _split_cols(df, columns)

@@ -21,7 +21,7 @@ class InvestmentInfo:
     sector: Optional[str] = None
     industry: Optional[str] = None
     business_description: Optional[str] = None
-    market_cap: Optional[float] = None
+    market_capitalisation: Optional[float] = None
     revenue: Optional[float] = None
     debt_to_equity: Optional[float] = None
     current_price: Optional[float] = None
@@ -47,7 +47,7 @@ class ShariaExpertAgent:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
         
-        print("🕌 Sharia Expert Agent initialized with research tools")
+        print("🕌 Sharia Expert Agent initialised with research tools")
     
     def _load_sharia_knowledge(self) -> str:
         """
@@ -77,13 +77,13 @@ class ShariaExpertAgent:
 - Pork: Hormel Foods, Tyson Foods (if pork significant)
 - Tobacco: Philip Morris, British American Tobacco
 - Adult entertainment: Adult entertainment companies
-- Offensive weapons: Lockheed Martin (defense acceptable)
+- Offensive weapons: Lockheed Martin (defence acceptable)
 
 ### 5. QUANTITATIVE CRITERIA (FINANCIAL SCREENING)
-- Debt/capitalization ratio ≤ 33%
+- Debt/capitalisation ratio ≤ 33%
 - Interest income ≤ 5% of turnover
-- Accounts payable ≤ 33% of capitalization
-- Interest-bearing cash ≤ 33% of capitalization
+- Accounts payable ≤ 33% of capitalisation
+- Interest-bearing cash ≤ 33% of capitalisation
 
 ### 6. CONFIRMED HALAL COMPANIES
 - Technology: Apple, Microsoft, Google, Tesla
@@ -153,7 +153,7 @@ class ShariaExpertAgent:
                 "sector": info.get("sector"),
                 "industry": info.get("industry"),
                 "business_summary": info.get("longBusinessSummary"),
-                "market_cap": info.get("marketCap"),
+                "market_capitalisation": info.get("marketCap"),
                 "revenue": info.get("totalRevenue"),
                 "total_debt": info.get("totalDebt"),
                 "total_cash": info.get("totalCash"),
@@ -180,25 +180,25 @@ class ShariaExpertAgent:
         Calculate Sharia-compliant ratios
         """
         try:
-            market_cap = financial_data.get("market_cap", 0)
+            market_capitalisation = financial_data.get("market_capitalisation", 0)
             total_debt = financial_data.get("total_debt", 0)
             total_cash = financial_data.get("total_cash", 0)
             revenue = financial_data.get("revenue", 0)
             
             ratios = {}
             
-            # Debt/capitalization ratio
-            if market_cap and market_cap > 0:
-                debt_ratio = (total_debt / market_cap) * 100 if total_debt else 0
-                ratios["debt_to_market_cap"] = {
+            # Debt/capitalisation ratio
+            if market_capitalisation and market_capitalisation > 0:
+                debt_ratio = (total_debt / market_capitalisation) * 100 if total_debt else 0
+                ratios["debt_to_market_capitalisation"] = {
                     "value": round(debt_ratio, 2),
                     "limit": 33.0,
                     "compliant": debt_ratio <= 33.0
                 }
                 
-                # Cash/capitalization ratio
-                cash_ratio = (total_cash / market_cap) * 100 if total_cash else 0
-                ratios["cash_to_market_cap"] = {
+                # Cash/capitalisation ratio
+                cash_ratio = (total_cash / market_capitalisation) * 100 if total_cash else 0
+                ratios["cash_to_market_capitalisation"] = {
                     "value": round(cash_ratio, 2),
                     "limit": 33.0,
                     "compliant": cash_ratio <= 33.0
@@ -321,7 +321,7 @@ class ShariaExpertAgent:
         except Exception as e:
             return {"error": f"Keyword check error: {str(e)}"}
     
-    async def analyze_investment_comprehensive(self, investment_query: str) -> Dict[str, Any]:
+    async def analyse_investment_comprehensive(self, investment_query: str) -> Dict[str, Any]:
         """
         Comprehensive investment analysis with real-time research
         """
@@ -335,7 +335,7 @@ class ShariaExpertAgent:
             haram_check = await self.check_haram_keywords(company_research)
             
             # 3. AI analysis based on collected data
-            sharia_analysis = await self._analyze_with_ai(investment_query, company_research, haram_check)
+            sharia_analysis = await self._analyse_with_ai(investment_query, company_research, haram_check)
             
             # 4. Compile final report
             comprehensive_report = {
@@ -357,7 +357,7 @@ class ShariaExpertAgent:
                 "investment_query": investment_query
             }
     
-    async def _analyze_with_ai(self, query: str, research_data: Dict, haram_check: Dict) -> Dict[str, Any]:
+    async def _analyse_with_ai(self, query: str, research_data: Dict, haram_check: Dict) -> Dict[str, Any]:
         """
         AI analysis with all collected data
         """
@@ -387,7 +387,7 @@ ANALYSIS MISSION:
 
 EVALUATION CRITERIA:
 - Main activity (>95% halal required)
-- Financial ratios (debt/capitalization ≤33%, etc.)
+- Financial ratios (debt/capitalisation ≤33%, etc.)
 - Interest income (<5% of revenue)
 - Forbidden sectors (alcohol, gambling, tobacco, etc.)
 - Ethical governance
@@ -419,7 +419,7 @@ MANDATORY RESPONSE FORMAT:
 ### 🔄 RECOMMENDATIONS:
 [Additional recommended actions]
 
-Respond in English with precision and religious authority.
+Respond in British English with precision and religious authority.
 """
 
             response = self.client.chat.completions.create(
@@ -523,7 +523,7 @@ Respond in English with precision and religious authority.
                     alternative_info[alt] = {
                         "name": info.get("company_name"),
                         "price": info.get("current_price"),
-                        "market_cap": info.get("market_cap"),
+                        "market_capitalisation": info.get("market_capitalisation"),
                         "sector": info.get("sector")
                     }
             
@@ -542,7 +542,7 @@ Respond in English with precision and religious authority.
         """
         try:
             prompt = f"""
-You are an expert Islamic investment advisor.
+You are an expert Islamic investment adviser.
 
 NON-COMPLIANT INVESTMENT:
 "{haram_investment}"
@@ -563,7 +563,7 @@ MISSION:
 REQUIRED FORMAT:
 ## 💡 RECOMMENDED HALAL ALTERNATIVES
 
-### 📈 DIRECT HALAL STOCKS:
+### 📈 DIRECT HALAL SHARES:
 - [Symbol] [Name] - [Sector] - [Sharia Justification]
 
 ### 🏢 SUKUK AND ISLAMIC BONDS:
@@ -639,9 +639,9 @@ Be precise, practical and actionable in your recommendations.
 # Global instance
 sharia_expert_agent = None
 
-def initialize_sharia_expert(openai_api_key: str, model_name: str = "gpt-4"):
+def initialise_sharia_expert(openai_api_key: str, model_name: str = "gpt-4"):
     """
-    Initialize the Sharia expert agent
+    Initialise the Sharia expert agent
     """
     global sharia_expert_agent
     sharia_expert_agent = ShariaExpertAgent(openai_api_key, model_name)

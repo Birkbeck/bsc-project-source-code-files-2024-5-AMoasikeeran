@@ -5,7 +5,7 @@ except ImportError:
     from pydantic import BaseSettings
 
 class Settings(BaseSettings):
-    OPENAI_API_KEY: str = "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"
+    OPENAI_API_KEY: str = ""
     MODEL_NAME: str = "gpt-4o"
     SAMPLE_MIN_ROWS: int = 200
     SAMPLE_MAX_ROWS: int = 400

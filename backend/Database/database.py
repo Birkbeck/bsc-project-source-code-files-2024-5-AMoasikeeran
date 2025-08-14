@@ -297,10 +297,10 @@ def list_all_users():
     finally:
         db.close()
 
-def initialize_database():
-    """Completely initialize the database"""
+def initialise_database():
+    """Completely initialise the database"""
     
-    print("🚀 DATABASE INITIALIZATION")
+    print("🚀 DATABASE INITIALISATION")
     print("="*50)
     
     # Display hash method used
@@ -325,7 +325,7 @@ def initialize_database():
     test_login("admin@finbot.com", "admin123")
     
     print("\n" + "="*50)
-    print("🎉 INITIALIZATION COMPLETE!")
+    print("🎉 INITIALISATION COMPLETE!")
     print("="*50)
     
     return True
@@ -473,5 +473,5 @@ def verify_database_integrity():
         return True
         
     except Exception as e:
-        print(f"❌ Database integrity check failed: {e}")
-        return False
+            print(f"❌ Database integrity check failed: {e}")
+            return False

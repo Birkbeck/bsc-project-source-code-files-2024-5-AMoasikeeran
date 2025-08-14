@@ -17,7 +17,7 @@ if not logger.hasHandlers():
 # --- OpenAI Client ---
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-def analyze_with_openai(prompt: str, system_prompt: str = None, max_tokens: int = 2000) -> str:
+def analyse_with_openai(prompt: str, system_prompt: str = None, max_tokens: int = 2000) -> str:
     """Analysis function using OpenAI GPT-4o directly"""
     try:
         # Prepare messages for OpenAI
@@ -45,8 +45,8 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
     try:
         # --- Input Preparation ---
         stock_symbol = stock_symbol.upper().strip()
-        logger.info(f"🚀 Analyzing {stock_symbol} with GPT-4o")
-        logger.info(f"📅 Date: {datetime.now().strftime('%m/%d/%Y %H:%M')}")
+        logger.info(f"🚀 Analysing {stock_symbol} with GPT-4o")
+        logger.info(f"📅 Date: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
         # --- STEP 1: Data Collection ---
         logger.info("📊 Collecting financial data...")
@@ -61,10 +61,10 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
         logger.info("🔍 Financial analysis in progress...")
         financial_system_prompt = (
             "You are a senior financial analyst with 20 years of experience in company valuation. "
-            "You excel at analyzing financial ratios, evaluating performance, and identifying trends."
+            "You excel at analysing financial ratios, evaluating performance, and identifying trends."
         )
         financial_prompt = f"""
-        Analyze in depth the financial data for {stock_symbol}:
+        Analyse in depth the financial data for {stock_symbol}:
 
         COMPANY DATA:
         {company_info}
@@ -75,7 +75,7 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
 
         1. **COMPANY OVERVIEW**
            - Business sector and positioning
-           - Size and scope (employees, market cap)
+           - Size and scope (employees, market capitalisation)
 
         2. **FINANCIAL PERFORMANCE**
            - Profitability ratios analysis (ROE, ROA, margins)
@@ -98,18 +98,18 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
            - Dividend policy
 
         FORMAT: Professional, objective report with precise figures and nuanced analysis.
-        LANGUAGE: English with appropriate financial terminology.
+        LANGUAGE: British English with appropriate financial terminology.
         """
-        financial_analysis = analyze_with_openai(financial_prompt, financial_system_prompt, 2500)
+        financial_analysis = analyse_with_openai(financial_prompt, financial_system_prompt, 2500)
 
         # --- STEP 4: Market Context Analysis ---
-        logger.info("📈 Analyzing market context and news...")
+        logger.info("📈 Analysing market context and news...")
         market_system_prompt = (
             "You are a market analyst expert in financial news and impact assessment. "
-            "You identify factors that influence stock prices and evaluate their potential impact."
+            "You identify factors that influence share prices and evaluate their potential impact."
         )
         market_prompt = f"""
-        Analyze the impact of news and market context on {stock_symbol}:
+        Analyse the impact of news and market context on {stock_symbol}:
 
         RECENT NEWS:
         {news_search}
@@ -131,11 +131,11 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
         3. **IMPACT ON VALUATION**
            - Identified positive factors
            - Risks and concerns
-           - Expected stock price evolution
+           - Expected share price evolution
 
         4. **FUTURE CATALYSTS**
            - Upcoming events (earnings, launches)
-           - Favorable sector trends
+           - Favourable sector trends
            - Growth opportunities
 
         5. **RISK FACTORS**
@@ -143,14 +143,14 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
            - Sector and macroeconomic risks
            - Identified warning signals
 
-        FORMAT: Concise, impact-oriented analysis with potential assessment.
+        FORMAT: Concise, impact-orientated analysis with potential assessment.
         """
-        market_analysis = analyze_with_openai(market_prompt, market_system_prompt, 2000)
+        market_analysis = analyse_with_openai(market_prompt, market_system_prompt, 2000)
 
         # --- STEP 5: Investment Recommendation ---
         logger.info("💡 Generating investment recommendation...")
         recommendation_system_prompt = (
-            "You are a certified senior investment advisor with recognized expertise "
+            "You are a certified senior investment adviser with recognised expertise "
             "in portfolio management and asset allocation. You formulate precise and actionable recommendations "
             "based on rigorous fundamental analysis."
         )
@@ -179,7 +179,7 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
 
         3. **RISK/RETURN PROFILE**
            - Risk level: Low / Moderate / High
-           - Expected annualized return
+           - Expected annualised return
            - Anticipated volatility
 
         4. **INVESTMENT STRATEGY**
@@ -202,7 +202,7 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
         FORMAT: Professional, precise, actionable recommendation.
         IMPORTANT: Base only on objective data analysis.
         """
-        recommendation = analyze_with_openai(recommendation_prompt, recommendation_system_prompt, 2500)
+        recommendation = analyse_with_openai(recommendation_prompt, recommendation_system_prompt, 2500)
 
         # --- STEP 6: Save Results ---
         logger.info("💾 Saving results...")
@@ -212,7 +212,7 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
         # --- Save Analysis ---
         analysis_content = f"""# Complete Financial Analysis - {stock_symbol}
 
-**Analysis Date:** {datetime.now().strftime('%m/%d/%Y at %H:%M')}  
+**Analysis Date:** {datetime.now().strftime('%d/%m/%Y at %H:%M')}  
 **Current Price:** {current_price}  
 
 ---
@@ -232,8 +232,8 @@ def run_stock_analysis_direct(stock_symbol: str) -> dict:
 ## ⚠️ Disclaimer
 
 This analysis is generated by artificial intelligence for informational purposes only. 
-It does not constitute personalized financial advice. Always consult a qualified financial 
-advisor before making investment decisions.
+It does not constitute personalised financial advice. Always consult a qualified financial 
+adviser before making investment decisions.
 
 *Analysis generated by Abacus FinBot - Powered by ABACUS-AI ANALYSIS*
 """
@@ -243,7 +243,7 @@ advisor before making investment decisions.
         # --- Save Recommendation ---
         recommendation_content = f"""# Investment Recommendation - {stock_symbol}
 
-**Date:** {datetime.now().strftime('%m/%d/%Y at %H:%M')}  
+**Date:** {datetime.now().strftime('%d/%m/%Y at %H:%M')}  
 **Reference Price:** {current_price}
 
 ---
@@ -254,8 +254,8 @@ advisor before making investment decisions.
 
 ## ⚠️ Important Disclaimer
 
-This recommendation is based on automated analysis and does not constitute personalized 
-financial advice. Investments involve risk of capital loss. Consult a financial advisor 
+This recommendation is based on automated analysis and does not constitute personalised 
+financial advice. Investments involve risk of capital loss. Consult a financial adviser 
 before any investment decision.
 
 *Recommendation generated by Abacus FinBot - Powered by ABACUS AI-ANALYSIS*

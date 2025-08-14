@@ -33,8 +33,8 @@ from Agent02.tools import *
 
 # ==================== SHARIA EXPERT AGENT IMPORT ====================
 try:
-    from Agent03.sharia_expert_agent import initialize_sharia_expert
-    sharia_expert_agent = initialize_sharia_expert(settings.OPENAI_API_KEY, settings.MODEL_NAME)
+    from Agent03.sharia_expert_agent import initialise_sharia_expert
+    sharia_expert_agent = initialise_sharia_expert(settings.OPENAI_API_KEY, settings.MODEL_NAME)
     SHARIA_EXPERT_AVAILABLE = True
     print("✅ Routes: Sharia Expert Agent imported with research tools")
 except ImportError as e:
@@ -42,7 +42,7 @@ except ImportError as e:
     SHARIA_EXPERT_AVAILABLE = False
     sharia_expert_agent = None
 except Exception as e:
-    print(f"⚠️ Routes: Error initializing Sharia Expert Agent - {e}")
+    print(f"⚠️ Routes: Error initialising Sharia Expert Agent - {e}")
     SHARIA_EXPERT_AVAILABLE = False
     sharia_expert_agent = None
 
@@ -224,7 +224,7 @@ def run_stock_analysis_background(symbol: str, task_id: str, user_id: int = None
             "error": str(e)
         }
 
-# ==================== ROUTER INITIALIZATION ====================
+# ==================== ROUTER INITIALISATION ====================
 
 router = APIRouter()
 
@@ -244,7 +244,7 @@ async def upload_file(
             "df": None,
             "summary": {},
             "chat": [
-                {"role": "system", "content": "You are FinBot, an AI financial advisor."}
+                {"role": "system", "content": "You are FinBot, an AI financial adviser."}
             ],
         }
         save_session(session_id, session)
@@ -274,7 +274,7 @@ async def chat(req: ChatRequest):
             "df": None,
             "summary": {},
             "chat": [
-                {"role": "system", "content": "You are FinBot, an AI financial advisor."}
+                {"role": "system", "content": "You are FinBot, an AI financial adviser."}
             ],
         }
         save_session(session_id, session)
@@ -345,7 +345,7 @@ async def create_session():
             "chat": [
                 {
                     "role": "system",
-                    "content": "You are FinBot, an AI financial advisor.",
+                    "content": "You are FinBot, an AI financial adviser.",
                 }
             ],
         },
@@ -413,7 +413,7 @@ async def list_users(db: Session = Depends(get_db)):
 # ==================== STOCK ANALYSIS ROUTES ====================
 
 @router.post("/stock/analyze-sync", response_model=StockAnalysisResponse)
-async def analyze_stock_sync(
+async def analyse_stock_sync(
     request: StockSymbolRequest,
     db: Session = Depends(get_db)
 ):
@@ -548,7 +548,7 @@ async def expert_sharia_analysis(request: ShariaAnalysisRequest):
         
         print(f"🕌 Expert Sharia analysis with research tools: {investment_query}")
         
-        result = await sharia_expert_agent.analyze_investment_comprehensive(investment_query)
+        result = await sharia_expert_agent.analyse_investment_comprehensive(investment_query)
         
         if result.get("status") == "error":
             raise HTTPException(status_code=500, detail=result.get("message"))
@@ -658,7 +658,7 @@ async def expert_agent_status():
         if not SHARIA_EXPERT_AVAILABLE or not sharia_expert_agent:
             return {
                 "status": "unavailable",
-                "message": "Sharia Expert Agent not initialized"
+                "message": "Sharia Expert Agent not initialised"
             }
         
         status = sharia_expert_agent.get_agent_status()
@@ -678,7 +678,7 @@ async def islamic_health():
             return {
                 "service": "sharia_expert_analysis",
                 "status": "unavailable",
-                "error": "Sharia Expert Agent not initialized"
+                "error": "Sharia Expert Agent not initialised"
             }
         
         status_info = sharia_expert_agent.get_agent_status()
@@ -717,7 +717,7 @@ async def islamic_health():
 
 
 @router.post("/islamic/analyze", response_model=ShariaAnalysisResponse)
-async def islamic_analyze_investment(request: ShariaAnalysisRequest):
+async def islamic_analyse_investment(request: ShariaAnalysisRequest):
     """
     Simplified Islamic analysis (redirects to expert)
     """
@@ -806,7 +806,7 @@ class ChartSuggestionRequest(BaseModel):
 class DashboardRequest(BaseModel):
     file_id: Optional[str] = None
 
-class VisualizationRequest(BaseModel):
+class VisualisationRequest(BaseModel):
     user_prompt: str
     file_id: Optional[str] = None
     chart_preferences: Optional[Dict[str, Any]] = None
@@ -832,24 +832,15 @@ async def create_chart_endpoint(request: ChartRequest):
                 request.columns, 
                 request.title
             )
-            try:
-                result_data = json.loads(chart_result)
-                if isinstance(result_data, dict) and result_data.get("action") == "error":
-                    raise HTTPException(status_code=400, detail=result_data.get("message"))
-                
-                return {
-                    "success": True,
-                    "chart_type": request.chart_type,
-                    "interactive": True,
-                    "chart_data": result_data
-                }
-            except json.JSONDecodeError:
-                return {
-                    "success": True,
-                    "chart_type": request.chart_type,
-                    "interactive": True,
-                    "chart_data": json.loads(chart_result)
-                }
+            result_data = json.loads(chart_result)
+            if isinstance(result_data, dict) and result_data.get("action") == "error":
+                raise HTTPException(status_code=400, detail=result_data.get("message"))
+            return {
+                "success": True,
+                "chart_type": request.chart_type,
+                "interactive": True,
+                "chart_data": result_data
+            }
         else:
             chart_base64 = make_chart(
                 df, 
@@ -928,10 +919,10 @@ async def get_dashboard_data(request: DashboardRequest):
         logger.error(f"Error creating dashboard data: {e}")
         raise HTTPException(status_code=500, detail=f"Dashboard creation failed: {str(e)}")
 
-@router.post("/finbot/smart-visualization")
-async def smart_visualization(request: VisualizationRequest):
+@router.post("/finbot/smart-visualisation")
+async def smart_visualisation(request: VisualisationRequest):
     """
-    Uses AI to interpret user request and create appropriate visualization.
+    Uses AI to interpret user request and create appropriate visualisation.
     """
     try:
         df = pd.DataFrame({
@@ -952,7 +943,7 @@ async def smart_visualization(request: VisualizationRequest):
         Data summary:
         {df_summary}
         
-        Please analyze the user's request and return ONLY a JSON response with the following structure:
+        Please analyse the user's request and return ONLY a JSON response with the following structure:
         {{
             "action": "plot",
             "kind": "bar|line|pie|scatter|histogram|box|violin|heatmap|area|donut",
@@ -1013,18 +1004,18 @@ async def smart_visualization(request: VisualizationRequest):
             }
             
     except Exception as e:
-        logger.error(f"Error in smart visualization: {e}")
-        raise HTTPException(status_code=500, detail=f"Smart visualization failed: {str(e)}")
+        logger.error(f"Error in smart visualisation: {e}")
+        raise HTTPException(status_code=500, detail=f"Smart visualisation failed: {str(e)}")
 
-@router.post("/finbot/upload-and-visualize")
-async def upload_and_visualize(
+@router.post("/finbot/upload-and-visualise")
+async def upload_and_visualise(
     file: UploadFile = File(...),
     chart_type: str = Form("auto"),
     columns: str = Form(""),
     interactive: bool = Form(True)
 ):
     """
-    Upload a file and immediately create a visualization.
+    Upload a file and immediately create a visualisation.
     """
     try:
         file_content = await file.read()
@@ -1100,8 +1091,8 @@ async def upload_and_visualize(
             }
             
     except Exception as e:
-        logger.error(f"Error in upload and visualize: {e}")
-        raise HTTPException(status_code=500, detail=f"Upload and visualization failed: {str(e)}")
+        logger.error(f"Error in upload and visualise: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload and visualisation failed: {str(e)}")
 
 @router.get("/finbot/chart-types")
 async def get_available_chart_types():
@@ -1129,7 +1120,7 @@ async def get_available_chart_types():
         },
         "donut": {
             "name": "Donut Chart",
-            "description": "Like pie chart but with a hole in the center",
+            "description": "Like pie chart but with a hole in the centre",
             "best_for": ["proportions", "percentages", "modern styling"],
             "data_requirements": "1 categorical + 1 numeric column"
         },
@@ -1154,7 +1145,7 @@ async def get_available_chart_types():
         "violin": {
             "name": "Violin Plot",
             "description": "Shows distribution shape and density",
-            "best_for": ["distribution analysis", "density visualization"],
+            "best_for": ["distribution analysis", "density visualisation"],
             "data_requirements": "1 numeric column, optional categorical"
         },
         "heatmap": {
@@ -1177,10 +1168,10 @@ async def get_available_chart_types():
         "total_types": len(chart_types)
     }
 
-@router.get("/finbot/test-visualization")
-async def test_visualization():
+@router.get("/finbot/test-visualisation")
+async def test_visualisation():
     """
-    Test route to verify that visualizations work.
+    Test route to verify that visualisations work.
     """
     try:
         import numpy as np
@@ -1202,14 +1193,14 @@ async def test_visualization():
         
         return {
             "success": True,
-            "message": "Visualization test completed",
+            "message": "Visualisation test completed",
             "test_results": test_results,
             "data_used": df.to_dict('records')
         }
         
     except Exception as e:
-        logger.error(f"Error in visualization test: {e}")
+        logger.error(f"Error in visualisation test: {e}")
         return {
             "success": False,
-            "message": f"Visualization test failed: {str(e)}"
+            "message": f"Visualisation test failed: {str(e)}"
         }

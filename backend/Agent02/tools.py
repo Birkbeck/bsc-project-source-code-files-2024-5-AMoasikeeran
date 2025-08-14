@@ -54,10 +54,10 @@ def search_tool(search_query: str) -> str:
     except Exception as e:
         return f"Search error for '{search_query}': {str(e)}"
 
-# --- Stock Price Retrieval ---
-def get_current_stock_price(symbol: str) -> str:
+# --- Share Price Retrieval ---
+def get_current_share_price(symbol: str) -> str:
     """
-    Get the current stock price for a given symbol.
+    Get the current share price for a given symbol.
     Returns price and currency or an error message.
     """
     try:
@@ -72,6 +72,15 @@ def get_current_stock_price(symbol: str) -> str:
             return f"Price not available for {symbol}"
     except Exception as e:
         return f"Error retrieving price for {symbol}: {str(e)}"
+
+# --- Keep original function name for backward compatibility ---
+def get_current_stock_price(symbol: str) -> str:
+    """
+    Get the current stock price for a given symbol.
+    Returns price and currency or an error message.
+    (Backward compatibility wrapper)
+    """
+    return get_current_share_price(symbol)
 
 # --- Company Info Retrieval ---
 def get_company_info(symbol: str) -> str:
@@ -90,7 +99,7 @@ def get_company_info(symbol: str) -> str:
             "Name": company_info_full.get("shortName") or company_info_full.get("longName"),
             "Symbol": company_info_full.get("symbol"),
             "Current_Price": f"{company_info_full.get('regularMarketPrice', company_info_full.get('currentPrice', 'N/A'))} {company_info_full.get('currency', 'USD')}",
-            "Market_Cap": company_info_full.get("marketCap"),
+            "Market_Capitalisation": company_info_full.get("marketCap"),
             "Sector": company_info_full.get("sector"),
             "Industry": company_info_full.get("industry"),
             "Country": company_info_full.get("country"),
