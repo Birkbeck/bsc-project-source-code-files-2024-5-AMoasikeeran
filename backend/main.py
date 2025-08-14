@@ -8,8 +8,8 @@ from config import settings
 from routes import router
 from Database.database import create_tables, add_test_users
 
-ENVIRONMENT = "development"
-PORT = 8000
+ENVIRONMENT = settings.ENVIRONMENT
+PORT = settings.PORT
 
 # --- Try importing Sharia Expert Agent ---
 try:
@@ -31,7 +31,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -433,12 +433,12 @@ async def health_check():
     }
 
 if __name__ == "__main__":
-    if ENVIRONMENT == "production":
+    if settings.ENVIRONMENT == "production":
         print("🌟 Starting Enhanced Banking Analytics Platform in PRODUCTION mode...")
         uvicorn.run(
             "main:app",
             host="0.0.0.0",
-            port=PORT,
+            port=settings.PORT,
             reload=False,
             log_level="info"
         )
@@ -448,29 +448,11 @@ if __name__ == "__main__":
         print("📱 Then launch the interface: streamlit run UI_streamlit.py")
         print("🌐 FastAPI: http://localhost:8000")
         print("📚 Docs: http://localhost:8000/docs")
-        print("\n🏦 Enhanced Banking Features:")
-        print("   📊 Automatic transaction categorisation")
-        print("   💰 Income/Expense/Savings analysis")
-        print("   📈 12+ professional chart types")
-        print("   🤖 AI-powered financial insights")
-        print("   📋 Banking dashboard with key metrics")
-        print("\n🔍 Enhanced endpoints to test:")
-        print("   POST /upload - Upload with banking detection")
-        print("   POST /banking-analysis - Professional analysis")
-        print("   POST /generate-chart - Comprehensive charts")
-        print("   GET /chart-types - All supported charts")
         
-        if SHARIA_EXPERT_AVAILABLE:
-            print("\n🕌 Expert Islamic endpoints:")
-            print("   POST /islamic/expert-analyze")
-            print("   POST /islamic/expert-alternatives") 
-            print("   POST /islamic/research-company")
-            print("   GET /islamic/expert-status")
-
         uvicorn.run(
             "main:app",
             host="127.0.0.1",
-            port=8000,
+            port=settings.PORT,
             reload=True,
             log_level="info"
         )

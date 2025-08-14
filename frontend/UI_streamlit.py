@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 from pathlib import Path
@@ -34,7 +35,14 @@ EMAIL_CONFIG = {
     "email": "arvinmoasikeeran@gmail.com",
     "password": "eiku rvnn hsgx cptc"
 }
+def get_backend_url():
+    if os.getenv("STREAMLIT_SHARING_MODE") or "streamlit.app" in os.getenv("HOSTNAME", ""):
+        return "https://your-render-app.onrender.com" 
+  
+    else:
+        return "http://localhost:8000"
 
+BACKEND = get_backend_url()
 
 def create_chart_request(chart_type, columns, title="", interactive=True, data=None):
     """Create a chart via the backend API"""
