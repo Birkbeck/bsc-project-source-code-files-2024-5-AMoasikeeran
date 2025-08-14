@@ -19,7 +19,7 @@ plotly==5.17.0
 plotly-express==0.4.1
 streamlit-plotly-events==0.0.6
 pillow
-sqlalchemy==2.0.23
+sqlalchemy 
 passlib[bcrypt]==1.7.4
 bcrypt==4.1.2
 python-multipart==0.0.6
