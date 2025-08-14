@@ -1418,7 +1418,7 @@ if not ss.chat_started:
 
     # Enhanced login modal
     if ss.show_login:
-        with st.expander("🔐 Secure Login", expanded=True):
+        with st.expander("🔐 Secure Login", expanded=True, key="login_expander"):
             if ss.login_error:
                 st.markdown(f"<div class='login-error'>{ss.login_error}</div>", unsafe_allow_html=True)
             
@@ -1438,7 +1438,7 @@ if not ss.chat_started:
 
     # Enhanced forgot password modal
     if ss.show_forgot_password:
-        with st.expander("🔐 Password Recovery", expanded=True):
+        with st.expander("🔐 Password Recovery", expanded=True, key="forgot_password_expander"):
             st.markdown("### 📧 Secure Recovery")
             st.markdown("Our administrator will be automatically notified and will contact you quickly to reset your access.")
             
