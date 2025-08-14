@@ -36,7 +36,7 @@ EMAIL_CONFIG = {
 }
 def get_backend_url():
     if os.getenv("STREAMLIT_SHARING_MODE") or "streamlit.app" in os.getenv("HOSTNAME", ""):
-        return "https://bsc-project-source-code-files-2024-5.onrender.com/" 
+        return "https://bsc-project-source-code-files-2024-5.onrender.com/ 
     else:
         return "http://localhost:8000"
 
