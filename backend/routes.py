@@ -792,6 +792,38 @@ async def health_all_services():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Global health error: {str(e)}")
+
+@router.get("/test-openai")
+async def test_openai_connection():
+    """Test OpenAI API connectivity"""
+    try:
+        # Check if API key is configured
+        if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY.strip() == "":
+            return {
+                "status": "error",
+                "message": "OpenAI API key not configured",
+                "openai_configured": False
+            }
+        
+        # Test simple OpenAI call
+        test_messages = [{"role": "user", "content": "Say 'Hello, this is a test'"}]
+        response = call_openai(test_messages)
+        
+        return {
+            "status": "success",
+            "message": "OpenAI API connection successful",
+            "openai_configured": True,
+            "test_response": response,
+            "model": settings.MODEL_NAME
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error", 
+            "message": f"OpenAI API connection failed: {str(e)}",
+            "openai_configured": bool(settings.OPENAI_API_KEY),
+            "error_details": str(e)
+        }
     
 class ChartRequest(BaseModel):
     chart_type: str  # bar, line, pie, scatter, histogram, box, violin, heatmap, area, donut

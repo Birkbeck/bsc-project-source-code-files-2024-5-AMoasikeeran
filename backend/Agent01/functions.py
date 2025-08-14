@@ -26,7 +26,13 @@ import openai
 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("finbot")
 from config import settings
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+# Configure OpenAI client with timeout and retry settings
+client = OpenAI(
+    api_key=settings.OPENAI_API_KEY,
+    timeout=60.0,  # 60 second timeout
+    max_retries=3  # Built-in retry mechanism
+)
 
 
 plt.style.use('seaborn-v0_8')
@@ -174,18 +180,41 @@ def _with_system_prompt(messages: list[dict]) -> list[dict]:
 def call_openai(messages: list[dict]) -> str:
     """Wrapper that injects the system prompt and returns the assistant's reply."""
     prepared = _with_system_prompt(messages)
+    
+    # Check if API key is available
+    if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY.strip() == "":
+        logger.error("OpenAI API key not configured")
+        raise RuntimeError("OpenAI API key not configured")
+    
     for attempt in range(4):
         try:
+            logger.info(f"OpenAI API call attempt {attempt + 1}/4")
             logger.info("Prompt sent to OpenAI:\n%s", json.dumps(prepared, indent=2, ensure_ascii=False))
+            
             resp = client.chat.completions.create(
                 model=settings.MODEL_NAME,
                 messages=prepared,
                 temperature=0.3,
+                timeout=60  # Explicit timeout per request
             )
+            logger.info("OpenAI API call successful")
             return resp.choices[0].message.content
-        except OpenAIError as e:
-            logger.error("OpenAI error: %s", e)
-            time.sleep(2 ** attempt)
+            
+        except Exception as e:
+            error_msg = f"OpenAI error (attempt {attempt + 1}): {str(e)}"
+            logger.error(error_msg)
+            
+            # Check specific error types
+            if "api_key" in str(e).lower() or "authentication" in str(e).lower():
+                logger.error("API key authentication failed")
+                raise RuntimeError("OpenAI API key authentication failed")
+            
+            if attempt < 3:  # Don't sleep on the last attempt
+                sleep_time = 2 ** attempt
+                logger.info(f"Retrying in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+    
+    logger.error("All OpenAI API retry attempts failed")
     raise RuntimeError("OpenAI API failure after retries")
 
 # --- DataFrame Column Utilities ---
