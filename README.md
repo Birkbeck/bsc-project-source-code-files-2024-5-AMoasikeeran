@@ -343,7 +343,7 @@ abacus-finbot/
 │
 ├── 📋 requirements.txt           # Backend dependencies
 ├── 📄 README.md                 # This file
-├── 📜 LICENSE                   # MIT License
+
 
 ## 🎯 Agent Capabilities
 
@@ -598,18 +598,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 🔐 **Enhanced Security**: Biometric authentication
 - 🌍 **Global Deployment**: Multi-region support
 
----
-
 ## ⭐ Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=yourusername/abacus-finbot&type=Date)](https://star-history.com/#yourusername/abacus-finbot&Date)
 
 ---
 
-<div align="center">
-
-**Made with ❤️ by the Abacus FinBot Team**
-
-📧 [Email](mailto:contact@abacusfinbot.com) • 💼 [LinkedIn](https://linkedin.com/company/abacusfinbot)
-
-</div>
