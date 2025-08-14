@@ -70,7 +70,7 @@ graph TB
 
 #### 1. **Clone the Repository**
 ```bash
-git clone https://github.com/yourusername/abacus-finbot.git
+https://github.com/Birkbeck/bsc-project-source-code-files-2024-5-AMoasikeeran.git
 cd abacus-finbot
 ```
 
