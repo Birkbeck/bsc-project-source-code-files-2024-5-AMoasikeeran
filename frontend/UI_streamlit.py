@@ -34,13 +34,8 @@ EMAIL_CONFIG = {
     "email": "arvinmoasikeeran@gmail.com",
     "password": "eiku rvnn hsgx cptc"
 }
-def get_backend_url():
-    if os.getenv("BACKEND_URL"):
-        return os.getenv("BACKEND_URL")
-    if os.getenv("STREAMLIT_ENV") == "development":
-        return "https://bsc-project-source-code-files-2024-5.onrender.com"
-   
-BACKEND = get_backend_url()
+
+BACKEND = "https://bsc-project-source-code-files-2024-5.onrender.com"
 
 def create_chart_request(chart_type, columns, title="", interactive=True, data=None):
     """Create a chart via the backend API"""
