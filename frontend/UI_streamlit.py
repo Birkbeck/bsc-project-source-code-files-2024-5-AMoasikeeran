@@ -17,7 +17,7 @@ import io
 import pandas as pd
 
 # ---------- Constants ----------
-BACKEND = "http://localhost:8000"
+BACKEND = "https://bsc-project-source-code-files-2024-5.onrender.com"
 CTX_OPTIONS = {
     "Summary": "summary",
     "Sample (200-400 rows)": "sample",
