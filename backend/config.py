@@ -22,7 +22,7 @@ class Settings(BaseSettings):
             return [
                 "https://*.streamlit.app",
                 "http://localhost:8501",
-                "https://bsc-project-source-code-files-2024-5.onrender.com"
+                "https://bsc-project-source-code-files-2024-5.onrender.com/"
             ]
         else:
             return ["*"]

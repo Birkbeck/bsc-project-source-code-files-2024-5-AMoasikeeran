@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import requests
 from pathlib import Path
@@ -17,7 +16,8 @@ from PIL import Image
 import io
 import pandas as pd
 
-# ---------- Constants ----------"
+# ---------- Constants ----------
+BACKEND = "http://localhost:8000"
 CTX_OPTIONS = {
     "Summary": "summary",
     "Sample (200-400 rows)": "sample",
@@ -35,7 +35,6 @@ EMAIL_CONFIG = {
     "password": "eiku rvnn hsgx cptc"
 }
 
-BACKEND = "https://bsc-project-source-code-files-2024-5.onrender.com"
 
 def create_chart_request(chart_type, columns, title="", interactive=True, data=None):
     """Create a chart via the backend API"""
@@ -58,7 +57,7 @@ def smart_visualisation_request(user_prompt):
     try:
         payload = {"user_prompt": user_prompt}
         
-        response = requests.post(f"{BACKEND}/finbot/smart-visualisation", json=payload, timeout=180)
+        response = requests.post(f"{BACKEND}/finbot/smart-visualization", json=payload, timeout=180)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -73,7 +72,7 @@ def upload_and_visualise_request(uploaded_file, chart_type="auto", columns="", i
             "interactive": str(interactive).lower()
         }
         
-        response = requests.post(f"{BACKEND}/finbot/upload-and-visualise", data=data, files=files, timeout=120)
+        response = requests.post(f"{BACKEND}/finbot/upload-and-visualize", data=data, files=files, timeout=120)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -111,11 +110,10 @@ def display_plotly_chart(chart_data, chart_key=None):
 
 def detect_chart_request(message):
     chart_keywords = [
-        'chart', 'graph', 'plot', 'visuali', 'curve', 'graphic', 
+        'chart', 'graph', 'plot', 'visualise', 'visualize', 'curve', 'graphique', 
         'bar', 'line', 'pie', 'scatter', 'histogram', 'box', 'violin',
-        'heatmap', 'area', 'donut', 'pie chart', 'histogram',
-        'show', 'display', 'draw', 'create', 'make', 'generate',
-        'display', 'show', 'create', 'generate', 'draw'
+        'heatmap', 'area', 'donut', 'histogramme',
+        'show', 'display', 'draw', 'create', 'make', 'generate'
     ]
     
     message_lower = message.lower()
@@ -204,7 +202,7 @@ def analyse_islamic_investment_request(investment_query):
 - Company: {financial.get('company_name', 'N/A')}
 - Sector: {financial.get('sector', 'N/A')}
 - Current Price: {financial.get('current_price', 'N/A')}
-- Market Capitalisation: {financial.get('market_capitalisation', 'N/A')}
+- Market Cap: {financial.get('market_cap', 'N/A')}
 
 """
                         # Add Sharia ratios if available
@@ -212,9 +210,9 @@ def analyse_islamic_investment_request(investment_query):
                         if sharia_ratios and not sharia_ratios.get("error"):
                             enhanced_response += f"""
 **📈 Sharia Ratios:**
-- Debt/Market Capitalisation Ratio: {sharia_ratios.get('debt_to_market_capitalisation', {}).get('value', 'N/A')}% (Limit: 33%)
-- Debt Compliant: {'✅' if sharia_ratios.get('debt_to_market_capitalisation', {}).get('compliant') else '❌'}
-- Cash Ratio: {sharia_ratios.get('cash_to_market_capitalisation', {}).get('value', 'N/A')}% (Limit: 33%)
+- Debt/Market Cap Ratio: {sharia_ratios.get('debt_to_market_cap', {}).get('value', 'N/A')}% (Limit: 33%)
+- Debt Compliant: {'✅' if sharia_ratios.get('debt_to_market_cap', {}).get('compliant') else '❌'}
+- Cash Ratio: {sharia_ratios.get('cash_to_market_cap', {}).get('value', 'N/A')}% (Limit: 33%)
 """
                 
                 # Add web search results
@@ -665,6 +663,7 @@ def confirm_upload():
     except Exception as e:
         st.error(f"❌ Upload failed: {e}")
     st.session_state.uploader = False
+
 def submit_message(msg: str):
     """Handle user sending a chat message with enhanced visualisation support."""
     msg = (msg or "").strip()
@@ -1483,6 +1482,8 @@ if ss.current_page == "menu":
     
     with col2:
         st.markdown("""
+        <div style='text-align: center; margin-bottom: 20px; display: flex; 
+                    flex-direction: column; align-items: center; justify-content: center;'>
             <div style='margin-bottom: 15px; animation: bounce 2s infinite; 
                         display: flex; justify-content: center; width: 100%;'>
                 <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto;">
@@ -1781,7 +1782,6 @@ elif ss.current_page == "stocks":
                             "text": f"ℹ️ Company info retrieved for {stock_symbol}"
                         })
                         st.rerun()
-        
         if ss.stock_results and ss.stock_results.get("status") == "success":
             st.markdown("---")
             analysed_symbol = ss.stock_results.get('symbol') or ss.last_analysed_symbol
