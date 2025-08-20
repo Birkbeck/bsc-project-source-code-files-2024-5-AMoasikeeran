@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 from pathlib import Path
@@ -16,8 +17,7 @@ from PIL import Image
 import io
 import pandas as pd
 
-# ---------- Constants ----------
-BACKEND = "http://localhost:8000"
+# ---------- Constants ----------"
 CTX_OPTIONS = {
     "Summary": "summary",
     "Sample (200-400 rows)": "sample",
@@ -35,9 +35,10 @@ EMAIL_CONFIG = {
     "password": "eiku rvnn hsgx cptc"
 }
 
+BACKEND = "https://bsc-project-source-code-files-2024-5.onrender.com"
 
 def create_chart_request(chart_type, columns, title="", interactive=True, data=None):
-    """Créer un graphique via l'API backend"""
+    """Create a chart via the backend API"""
     try:
         payload = {
             "chart_type": chart_type,
@@ -53,17 +54,17 @@ def create_chart_request(chart_type, columns, title="", interactive=True, data=N
     except Exception as e:
         return {"success": False, "message": f"Chart creation error: {str(e)}"}
 
-def smart_visualization_request(user_prompt):
+def smart_visualisation_request(user_prompt):
     try:
         payload = {"user_prompt": user_prompt}
         
-        response = requests.post(f"{BACKEND}/finbot/smart-visualization", json=payload, timeout=180)
+        response = requests.post(f"{BACKEND}/finbot/smart-visualisation", json=payload, timeout=180)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"success": False, "message": f"Smart visualization error: {str(e)}"}
+        return {"success": False, "message": f"Smart visualisation error: {str(e)}"}
 
-def upload_and_visualize_request(uploaded_file, chart_type="auto", columns="", interactive=True):
+def upload_and_visualise_request(uploaded_file, chart_type="auto", columns="", interactive=True):
     try:
         files = {"file": uploaded_file}
         data = {
@@ -72,11 +73,11 @@ def upload_and_visualize_request(uploaded_file, chart_type="auto", columns="", i
             "interactive": str(interactive).lower()
         }
         
-        response = requests.post(f"{BACKEND}/finbot/upload-and-visualize", data=data, files=files, timeout=120)
+        response = requests.post(f"{BACKEND}/finbot/upload-and-visualise", data=data, files=files, timeout=120)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"success": False, "message": f"Upload and visualize error: {str(e)}"}
+        return {"success": False, "message": f"Upload and visualise error: {str(e)}"}
 
 def get_chart_types():
     try:
@@ -105,16 +106,16 @@ def display_plotly_chart(chart_data, chart_key=None):
         })
         return True
     except Exception as e:
-        st.error(f"Erreur d'affichage du graphique: {e}")
+        st.error(f"Chart display error: {e}")
         return False
 
 def detect_chart_request(message):
     chart_keywords = [
-        'chart', 'graph', 'plot', 'visuali', 'courbe', 'graphique', 
+        'chart', 'graph', 'plot', 'visuali', 'curve', 'graphic', 
         'bar', 'line', 'pie', 'scatter', 'histogram', 'box', 'violin',
-        'heatmap', 'area', 'donut', 'camembert', 'histogramme',
+        'heatmap', 'area', 'donut', 'pie chart', 'histogram',
         'show', 'display', 'draw', 'create', 'make', 'generate',
-        'affiche', 'montre', 'crée', 'génère', 'dessine'
+        'display', 'show', 'create', 'generate', 'draw'
     ]
     
     message_lower = message.lower()
@@ -162,8 +163,8 @@ Automatic notification - Abacus FinBot System
         return {"success": False, "message": f"Error sending: {str(e)}"}
 
 # ---------- Functions Agent03 (Islamic Analysis) - EXPERT VERSION ----------
-def analyze_islamic_investment_request(investment_query):
-    """Analyze an investment using the Expert Sharia Agent with internet research"""
+def analyse_islamic_investment_request(investment_query):
+    """Analyse an investment using the Expert Sharia Agent with internet research"""
     try:
         # Use expert endpoint instead of the old one
         payload = {"investment_query": investment_query}
@@ -203,7 +204,7 @@ def analyze_islamic_investment_request(investment_query):
 - Company: {financial.get('company_name', 'N/A')}
 - Sector: {financial.get('sector', 'N/A')}
 - Current Price: {financial.get('current_price', 'N/A')}
-- Market Cap: {financial.get('market_cap', 'N/A')}
+- Market Capitalisation: {financial.get('market_capitalisation', 'N/A')}
 
 """
                         # Add Sharia ratios if available
@@ -211,9 +212,9 @@ def analyze_islamic_investment_request(investment_query):
                         if sharia_ratios and not sharia_ratios.get("error"):
                             enhanced_response += f"""
 **📈 Sharia Ratios:**
-- Debt/Market Cap Ratio: {sharia_ratios.get('debt_to_market_cap', {}).get('value', 'N/A')}% (Limit: 33%)
-- Debt Compliant: {'✅' if sharia_ratios.get('debt_to_market_cap', {}).get('compliant') else '❌'}
-- Cash Ratio: {sharia_ratios.get('cash_to_market_cap', {}).get('value', 'N/A')}% (Limit: 33%)
+- Debt/Market Capitalisation Ratio: {sharia_ratios.get('debt_to_market_capitalisation', {}).get('value', 'N/A')}% (Limit: 33%)
+- Debt Compliant: {'✅' if sharia_ratios.get('debt_to_market_capitalisation', {}).get('compliant') else '❌'}
+- Cash Ratio: {sharia_ratios.get('cash_to_market_capitalisation', {}).get('value', 'N/A')}% (Limit: 33%)
 """
                 
                 # Add web search results
@@ -405,11 +406,11 @@ def research_company_islamic_request(company_name):
         return {"status": "error", "message": f"Research error: {str(e)}"}
 
 # ---------- Stock Functions ----------
-def analyze_stock_request(symbol):
+def analyse_stock_request(symbol):
     """Launch synchronous stock analysis"""
     try:
         payload = {"symbol": symbol}
-        with st.spinner(f"🤖 FINBOT ANALYZING YOUR STOCK {symbol}"):
+        with st.spinner(f"🤖 FINBOT ANALYSING YOUR STOCK {symbol}"):
             r = requests.post(f"{BACKEND}/stock/analyze-sync", json=payload, timeout=300)
             r.raise_for_status()
             return r.json()
@@ -481,7 +482,7 @@ def logout():
     
     # Clear Stock session
     st.session_state.stock_results = None
-    st.session_state.last_analyzed_symbol = ""
+    st.session_state.last_analysed_symbol = ""
     st.session_state.stock_chat_messages = []
     
     # Clear Islamic session
@@ -528,8 +529,8 @@ def submit_finbot_message(msg: str):
     ensure_finbot_session()
     ss.finbot_messages.append({"role": "user", "text": msg})
     if detect_chart_request(msg):
-        with st.spinner("🎨 Creating your visualization..."):
-            viz_result = smart_visualization_request(msg)
+        with st.spinner("🎨 Creating your visualisation..."):
+            viz_result = smart_visualisation_request(msg)
             
             if viz_result.get("success") and viz_result.get("chart_data"):
                 if viz_result.get("ai_interpretation"):
@@ -538,7 +539,7 @@ def submit_finbot_message(msg: str):
                     ss.finbot_messages.append({"role": "bot", "text": ai_msg})
                 ss.finbot_messages.append({
                     "role": "bot", 
-                    "text": "📈 Here's your visualization:",
+                    "text": "📈 Here's your visualisation:",
                     "chart_data": viz_result["chart_data"],
                     "chart_type": "interactive"
                 })
@@ -665,7 +666,7 @@ def confirm_upload():
         st.error(f"❌ Upload failed: {e}")
     st.session_state.uploader = False
 def submit_message(msg: str):
-    """Handle user sending a chat message with enhanced visualization support."""
+    """Handle user sending a chat message with enhanced visualisation support."""
     msg = (msg or "").strip()
     if not msg:
         return
@@ -673,8 +674,8 @@ def submit_message(msg: str):
     ensure_session()
     ss.messages.append({"role": "user", "text": msg})
     if detect_chart_request(msg):
-        with st.spinner("🎨 Creating your visualization..."):
-            viz_result = smart_visualization_request(msg)
+        with st.spinner("🎨 Creating your visualisation..."):
+            viz_result = smart_visualisation_request(msg)
             
             if viz_result.get("success") and viz_result.get("chart_data"):
                 if viz_result.get("ai_interpretation"):
@@ -683,7 +684,7 @@ def submit_message(msg: str):
                     ss.messages.append({"role": "bot", "text": ai_msg})
                 ss.messages.append({
                     "role": "bot", 
-                    "text": "📈 Here's your visualization:",
+                    "text": "📈 Here's your visualisation:",
                     "chart_data": viz_result["chart_data"],
                     "chart_type": "interactive"
                 })
@@ -726,7 +727,7 @@ def submit_islamic_message():
     ss.islamic_messages.append({"role": "user", "text": msg})
     
     # Use expert agent with internet research
-    result = analyze_islamic_investment_request(msg)
+    result = analyse_islamic_investment_request(msg)
     
     if result.get("status") == "success":
         islamic_status = result.get("islamic_status", "QUESTIONABLE ⚠️")
@@ -772,15 +773,15 @@ def submit_islamic_message():
 
 # ---------- Logo Component for Pages ----------
 def show_page_logo():
-    """Display logo at top of each page - ULTRA PERFECTLY CENTERED"""
-    # Create a full-width centered container
+    """Display logo at top of each page - ULTRA PERFECTLY CENTRED"""
+    # Create a full-width centred container
     st.markdown("""
     <div style='width: 100%; height: auto; display: flex; justify-content: center; align-items: center; 
                 margin: 20px auto; text-align: center; position: relative;'>
     """, unsafe_allow_html=True)
     
     if LOGO.exists():
-        # Triple centering approach for images
+        # Triple centring approach for images
         col_empty1, col_logo, col_empty2 = st.columns([2, 1, 2])
         with col_logo:
             st.markdown("""
@@ -790,7 +791,7 @@ def show_page_logo():
             st.image(str(LOGO), width=150)
             st.markdown("</div>", unsafe_allow_html=True)
     else:
-        # Ultra-centered text logo
+        # Ultra-centred text logo
         st.markdown("""
         <div style='width: 100%; display: flex; justify-content: center; align-items: center; 
                     position: relative; left: 50%; transform: translateX(-50%);'>
@@ -826,7 +827,7 @@ def show_top_navigation():
             logout()
             st.rerun()
 
-# ---------- Session State Initialization ----------
+# ---------- Session State Initialisation ----------
 ss = st.session_state
 ss.setdefault("chat_started", False)
 ss.setdefault("show_login", False)
@@ -846,7 +847,7 @@ ss.setdefault("finbot_uploader", False)
 
 # STOCK ANALYSIS -  
 ss.setdefault("stock_results", None)
-ss.setdefault("last_analyzed_symbol", "")
+ss.setdefault("last_analysed_symbol", "")
 ss.setdefault("stock_chat_messages", [])
 
 # ISLAMIC ANALYSIS - 
@@ -880,7 +881,7 @@ st.markdown("""
     --orange-secondary: #FF6B35;
     --orange-hover: #FF7A3D;
 
-    /* Background color */
+    /* Background colour */
     --main-bg: #FDF9F4;
     --light-bg: #fefcf9;
 
@@ -934,7 +935,7 @@ div[data-testid="column"] {
     background-color: #FDF9F4 !important;
 }
 
-/* Center the main container vertically and horizontally */
+/* Centre the main container vertically and horizontally */
 [data-testid="stAppViewContainer"] > .main > .block-container {
     display: flex;
     flex-direction: column;
@@ -1105,7 +1106,7 @@ div[data-testid="column"] {
     box-shadow: 0 8px 25px rgba(255, 140, 66, 0.4);
 }
 
-/* STATUS SPECIFIC COLORS for Islamic Analysis */
+/* STATUS SPECIFIC COLOURS for Islamic Analysis */
 /* HALAL - GREEN */
 .islamic-halal {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
@@ -1120,7 +1121,7 @@ div[data-testid="column"] {
 
 /* QUESTIONABLE - DARK ORANGE */
 .islamic-questionable {
-    background: linear-gradient(135deg, #fd7e14 0%, #e63946 100%) !important;
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
     color: white;
 }
 
@@ -1178,7 +1179,7 @@ div[data-testid="column"] {
     transition: var(--transition);
 }
 
-/* OPTIMIZED BUTTONS - Orange Theme */
+/* OPTIMISED BUTTONS - Orange Theme */
 .stButton > button[data-testid="baseButton-primary"] {
     background: linear-gradient(135deg, #FF8C42 0%, #FF6B35 100%) !important;
     color: white !important;
@@ -1277,7 +1278,7 @@ button[data-testid*="primary"]:hover,
     margin: 0 auto !important;
 }
 
-/* CENTER THE IMAGE (LOGO) */
+/* CENTRE THE IMAGE (LOGO) */
 [data-testid="image"] {
     display: flex !important;
     justify-content: center !important;
@@ -1296,7 +1297,7 @@ button[data-testid*="primary"]:hover,
     text-align: center !important;
 }
 
-/* CENTER THE BUTTON */
+/* CENTRE THE BUTTON */
 .stButton {
     display: flex !important;
     justify-content: center !important;
@@ -1375,10 +1376,10 @@ button[data-testid*="primary"]:hover,
 
 # ==================== ENHANCED HOME SCREEN (LOGIN) ====================
 if not ss.chat_started:
-    # Centered logo and minimal text
+    # Centred logo and minimal text
     col1, col2, col3 = st.columns([1, 2, 1])
     
-    # Centered logo and minimal text
+    # Centred logo and minimal text
     st.markdown("""
     <div style='display: flex; flex-direction: column; align-items: center; justify-content: center; 
                 text-align: center; margin: 50px 0;'>
@@ -1403,11 +1404,11 @@ if not ss.chat_started:
     st.markdown("""
     <div style='text-align: center; font-size: 1.2rem; color: #666; margin: 20px auto 40px auto; 
                 font-weight: 500; max-width: 400px;'>
-        AI-Powered Financial Intelligence with Advanced Data Visualization
+        AI-Powered Financial Intelligence with Advanced Data Visualisation
     </div>
     """, unsafe_allow_html=True)
     
-    # Large centered login button
+    # Large centred login button
     col1, col2, col3 = st.columns([0.5, 1, 0.5])
     with col2:
         if st.button("🚀 GET STARTED", key="main_login", use_container_width=True, type="primary"):
@@ -1461,11 +1462,11 @@ if not ss.chat_started:
 if ss.chat_started:
     show_top_navigation()
 
-# ==================== OPTIMIZED MAIN MENU ====================
+# ==================== OPTIMISED MAIN MENU ====================
 if ss.current_page == "menu":
     show_page_logo()
     
-    # ULTRA PERFECTLY CENTERED welcome with user name
+    # ULTRA PERFECTLY CENTRED welcome with user name
     st.markdown(f"""
     <div style='width: 100%; display: flex; justify-content: center; align-items: center; 
                 margin: 30px auto 50px auto; text-align: center; position: relative;'>
@@ -1477,13 +1478,11 @@ if ss.current_page == "menu":
     </div>
     """, unsafe_allow_html=True)
     
-    # ULTRA CENTERED service buttons in single row
+    # ULTRA CENTRED service buttons in single row
     col1, col2, col3, col4, col5 = st.columns([0.1, 1, 1, 1, 0.1])
     
     with col2:
         st.markdown("""
-        <div style='text-align: center; margin-bottom: 20px; display: flex; 
-                    flex-direction: column; align-items: center; justify-content: center;'>
             <div style='margin-bottom: 15px; animation: bounce 2s infinite; 
                         display: flex; justify-content: center; width: 100%;'>
                 <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto;">
@@ -1537,7 +1536,7 @@ if ss.current_page == "menu":
             <h3 style='margin: 0 0 10px 0; color: #2d3748; text-align: center;'>Stock Analysis</h3>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Analyze Stocks", key="btn_stocks", use_container_width=True, type="primary"):
+        if st.button("Analyse Stocks", key="btn_stocks", use_container_width=True, type="primary"):
             go_to_stocks()
             st.rerun()
     
@@ -1580,7 +1579,7 @@ if ss.current_page == "menu":
             go_to_islamic()
             st.rerun()
 
-# ==================== ENHANCED FINBOT PAGE WITH VISUALIZATIONS ====================
+# ==================== ENHANCED FINBOT PAGE WITH VISUALISATIONS ====================
 elif ss.current_page == "finbot":
     show_page_logo()
     
@@ -1599,7 +1598,7 @@ elif ss.current_page == "finbot":
         </div>
         <div style='text-align: center; margin: 0 auto;'>
             <h2 style='text-align: center; margin: 0; color: #2d3748; font-weight: 700;'>
-                💬 FinBot Chat & Visualizations
+                💬 FinBot Chat & Visualisations
             </h2>
         </div>
         <div style='position: absolute; right: 0;'>
@@ -1610,7 +1609,7 @@ elif ss.current_page == "finbot":
     
     st.markdown("</div></div>", unsafe_allow_html=True)
     
-    # FinBot Chat History - INDÉPENDANT
+    # FinBot Chat History - INDEPENDENT
     for i, m in enumerate(ss.finbot_messages):
         cls = "user" if m["role"] == "user" else "bot"
         st.markdown(f"<div class='bub {cls}'>{m['text']}</div>", unsafe_allow_html=True)
@@ -1656,7 +1655,7 @@ elif ss.current_page == "finbot":
                 "Select Excel/CSV file",
                 type=["xlsx", "xls", "csv", "xlsm", "ods"],
                 key="finbot_file_uploader",
-                help="Upload your financial data to analyze and visualize"
+                help="Upload your financial data to analyse and visualise"
             )
             
             col1, col2 = st.columns(2)
@@ -1671,13 +1670,13 @@ elif ss.current_page == "finbot":
 
     # Helpful message
     if not ss.finbot_session_id and not ss.finbot_uploader:
-        st.info("💡 **Tip**: Upload your financial data first, then ask me questions about it or request visualizations!")
+        st.info("💡 **Tip**: Upload your financial data first, then ask me questions about it or request visualisations!")
 
     # FinBot Chat Input
     st.markdown("---")
     with st.form("finbot_chart_form", clear_on_submit=True):
         user_msg = st.text_input(
-            "💭 Ask about your data or request visualizations", 
+            "💭 Ask about your data or request visualisations", 
             key="finbot_user_input", 
             placeholder="Examples: 'Show me spending by category', 'Create a pie chart of expenses', 'What's my highest expense?'", 
             label_visibility="collapsed"
@@ -1685,14 +1684,13 @@ elif ss.current_page == "finbot":
         
         col_context, col_send = st.columns([0.8, 0.2])
         
-        
-        
         with col_send:
             submitted = st.form_submit_button("🚀 Send", use_container_width=True, type="primary")
         
         if submitted:
             submit_finbot_message(user_msg)
             st.rerun()
+
 # ==================== STOCK ANALYSIS PAGE ====================
 elif ss.current_page == "stocks":
     show_page_logo()
@@ -1721,7 +1719,7 @@ elif ss.current_page == "stocks":
     col_main, col_sidebar = st.columns([2, 1])
     
     with col_main:
-        st.markdown("### 🎯 Analyze a Stock")
+        st.markdown("### 🎯 Analyse a Stock")
         
         stock_symbol = st.text_input(
             "Stock symbol:",
@@ -1738,12 +1736,12 @@ elif ss.current_page == "stocks":
         with col_a:
             if st.button("🚀 AI Analysis", disabled=not stock_symbol, type="primary", use_container_width=True):
                 if stock_symbol:
-                    result = analyze_stock_request(stock_symbol)
+                    result = analyse_stock_request(stock_symbol)
                     ss.stock_results = result
-                    ss.last_analyzed_symbol = stock_symbol
+                    ss.last_analysed_symbol = stock_symbol
                     ss.stock_chat_messages.append({
                         "role": "user", 
-                        "text": f"Analyze {stock_symbol}"
+                        "text": f"Analyse {stock_symbol}"
                     })
                     if result.get("status") == "success":
                         ss.stock_chat_messages.append({
@@ -1783,13 +1781,14 @@ elif ss.current_page == "stocks":
                             "text": f"ℹ️ Company info retrieved for {stock_symbol}"
                         })
                         st.rerun()
+        
         if ss.stock_results and ss.stock_results.get("status") == "success":
             st.markdown("---")
-            analyzed_symbol = ss.stock_results.get('symbol') or ss.last_analyzed_symbol
+            analysed_symbol = ss.stock_results.get('symbol') or ss.last_analysed_symbol
             
             st.markdown(f"""
             <div class='stock-card'>
-                <h2>🎉 Analysis Complete - {analyzed_symbol}</h2>
+                <h2>🎉 Analysis Complete - {analysed_symbol}</h2>
                 <p>Comprehensive report generated by FinBot AI</p>
             </div>
             """, unsafe_allow_html=True)
@@ -1824,7 +1823,7 @@ elif ss.current_page == "stocks":
                     })
                     ss.stock_chat_messages.append({
                         "role": "bot", 
-                        "text": "I can help with stock analysis. Use the buttons above to analyze specific stocks!"
+                        "text": "I can help with stock analysis. Use the buttons above to analyse specific stocks!"
                     })
                     st.rerun()
 
@@ -1832,7 +1831,7 @@ elif ss.current_page == "stocks":
 elif ss.current_page == "islamic":
     show_page_logo()
     
-    # Simple header with back button - PERFECTLY CENTERED
+    # Simple header with back button - PERFECTLY CENTRED
     st.markdown("""
     <div style='width: 100%; display: flex; justify-content: center; align-items: center; 
                 margin: 20px 0; position: relative;'>
@@ -1928,7 +1927,7 @@ elif ss.current_page == "islamic":
             ss.islamic_messages.append({"role": "user", "text": user_input.strip()})
             
             # Get response from expert agent
-            result = analyze_islamic_investment_request(user_input.strip())
+            result = analyse_islamic_investment_request(user_input.strip())
             
             if result.get("status") == "success":
                 islamic_status = result.get("islamic_status", "QUESTIONABLE ⚠️")
@@ -1977,6 +1976,6 @@ if ss.current_page != "menu":
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; margin: 20px 0; color: #666; font-size: 0.9rem;'>
-        🤖 <strong>Abacus FinBot</strong> - Multi-Agent AI Platform with Advanced Data Visualization
+        🤖 <strong>Abacus FinBot</strong> - Multi-Agent AI Platform with Advanced Data Visualisation
     </div>
     """, unsafe_allow_html=True)
